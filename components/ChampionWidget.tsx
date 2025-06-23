@@ -58,7 +58,8 @@ export default function ChampionWidget() {
       
       votesData?.forEach(vote => {
         const teamId = vote.voted_team_id
-        const teamName = vote.team?.name || '알 수 없음'
+        const teamData = Array.isArray(vote.team) ? vote.team[0] : vote.team
+        const teamName = teamData?.name || '알 수 없음'
         
         if (!teamVotes[teamId]) {
           teamVotes[teamId] = { name: teamName, count: 0 }

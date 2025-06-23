@@ -92,9 +92,9 @@ export default function TeamDetailPage() {
   }, [searchTerm, departmentFilter, positionFilter, players])
 
   // 고유 부서 목록
-  const departments = [...new Set(players.map(p => p.department).filter(Boolean))]
+  const departments = Array.from(new Set(players.map(p => p.department).filter(Boolean))) as string[]
   // 고유 포지션 목록
-  const positions = [...new Set(players.map(p => p.position).filter(Boolean))]
+  const positions = Array.from(new Set(players.map(p => p.position).filter(Boolean))) as string[]
 
   async function deletePlayer(playerId: string) {
     if (!confirm('정말로 이 선수를 삭제하시겠습니까?')) return

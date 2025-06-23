@@ -64,8 +64,10 @@ export default function PlayersStandingsPage() {
 
       eventsData?.forEach(event => {
         const playerId = event.player_id
-        const playerName = event.players?.name || '알 수 없음'
-        const teamName = event.players?.teams?.name || '알 수 없음'
+        const playerData = Array.isArray(event.players) ? event.players[0] : event.players
+        const playerName = playerData?.name || '알 수 없음'
+        const teamData = Array.isArray(playerData?.teams) ? playerData?.teams[0] : playerData?.teams
+        const teamName = teamData?.name || '알 수 없음'
 
         if (!playerStatsMap[playerId]) {
           playerStatsMap[playerId] = {

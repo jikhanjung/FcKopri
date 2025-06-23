@@ -30,8 +30,8 @@ interface CalendarMatch {
   status: string
   home_score: number | null
   away_score: number | null
-  home_team: { name: string } | null
-  away_team: { name: string } | null
+  home_team: { name: string } | { name: string }[] | null
+  away_team: { name: string } | { name: string }[] | null
 }
 
 export default function CalendarPage() {
@@ -39,6 +39,13 @@ export default function CalendarPage() {
   const [loading, setLoading] = useState(true)
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+
+  // 팀 이름 가져오기 헬퍼 함수
+  const getTeamName = (team: { name: string } | { name: string }[] | null): string => {
+    if (!team) return '미정'
+    if (Array.isArray(team)) return team[0]?.name || '미정'
+    return team.name || '미정'
+  }
 
   useEffect(() => {
     fetchMatches()
@@ -214,7 +221,7 @@ export default function CalendarPage() {
                               'bg-blue-100 text-blue-800'
                             } hover:opacity-80 transition-opacity`}>
                               <div className="font-medium truncate">
-                                {match.home_team?.name || '미정'} vs {match.away_team?.name || '미정'}
+                                {getTeamName(match.home_team)} vs {getTeamName(match.away_team)}
                               </div>
                               <div className="flex items-center text-xs">
                                 <ClockIcon className="w-3 h-3 mr-1" />
@@ -267,7 +274,7 @@ export default function CalendarPage() {
                       >
                         <div className="flex items-center justify-between mb-2">
                           <div className="text-sm font-medium text-gray-900">
-                            {match.home_team?.name || '미정'} vs {match.away_team?.name || '미정'}
+                            {getTeamName(match.home_team)} vs {getTeamName(match.away_team)}
                           </div>
                           {getStatusBadge(match.status)}
                         </div>
