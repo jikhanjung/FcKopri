@@ -18,9 +18,11 @@
 - **Man of the Match**: 경기별 최우수 선수 선정 시스템
 - **실시간 알림**: Supabase Realtime을 통한 즉시 업데이트
 
-### 🎯 예측 시스템
+### 🎯 투표 시스템
 - **경기 결과 맞히기**: 사용자별 경기 예측 및 정확도 리더보드
-- **우승팀 투표**: 토너먼트 우승 후보 투표 시스템
+- **우승팀 맞히기**: 토너먼트 우승팀 예측 시스템
+- **MVP 투표**: 팬 투표 기반 최우수선수 선정
+- **베스트6 투표**: 포지션별 베스트 선수 선정 (공격수1, 미드필더2, 수비수2, 골키퍼1)
 - **실시간 피드**: 새로운 예측/투표 실시간 알림
 - **예측 통계**: 예측 참여율 및 정확도 분석
 
@@ -29,6 +31,8 @@
 - **시각화**: 차트와 그래프를 통한 데이터 표현
 - **데이터 내보내기**: JSON, CSV, Excel 형식 지원 (UTF-8 BOM 한글 지원)
 - **사진 관리**: 경기/팀별 사진 업로드 및 갤러리
+- **하이라이트 영상**: 경기별 유튜브 영상 연동 및 썸네일 자동 생성
+- **댓글 시스템**: 경기별/사진별/팀별 댓글 및 답글, 좋아요/싫어요 기능
 
 ### 🎨 사용자 경험
 - **다크 모드**: 테마 전환 기능
@@ -85,6 +89,9 @@ Supabase SQL Editor에서 다음 파일들을 순서대로 실행:
 - `add_man_of_the_match.sql`
 - `match_photos_table.sql`
 - `team_photos_table.sql`
+- `mvp_votes_table.sql`
+- `comments_table.sql`
+- `add_youtube_links.sql`
 
 그리고 Supabase Storage에서 다음 버킷들을 생성:
 - `match-photos` (경기 사진)
@@ -107,8 +114,10 @@ npm start
 FcKopri/
 ├── app/                     # Next.js 14 App Router
 │   ├── admin/              # 관리자 페이지
+│   ├── api/                # API 엔드포인트 (IP 가져오기)
+│   ├── awards/             # MVP/베스트6 투표 및 시상식
 │   ├── calendar/           # 캘린더 뷰
-│   ├── champion/           # 우승팀 투표
+│   ├── champion/           # 우승팀 맞히기
 │   ├── matches/            # 경기 관리
 │   ├── playoffs/           # 플레이오프
 │   ├── predictions/        # 경기 예측
@@ -120,6 +129,7 @@ FcKopri/
 ├── components/             # 재사용 가능한 React 컴포넌트
 │   ├── AdminRoute.tsx      # 관리자 전용 라우트
 │   ├── ChampionVoting.tsx  # 우승팀 투표
+│   ├── CommentSection.tsx  # 댓글 시스템
 │   ├── GlobalSearch.tsx    # 전역 검색
 │   ├── LivePredictionFeed.tsx # 실시간 예측 피드
 │   ├── ManOfTheMatchSelector.tsx # MOTM 선정
@@ -128,6 +138,7 @@ FcKopri/
 │   ├── MatchPrediction.tsx # 경기 예측
 │   ├── Navigation.tsx      # 네비게이션
 │   ├── TeamPhotos.tsx      # 팀 사진 관리
+│   ├── YouTubeManager.tsx  # 유튜브 영상 관리
 │   └── ...
 ├── contexts/               # React Context 
 │   ├── AuthContext.tsx     # 인증 상태
@@ -156,9 +167,16 @@ FcKopri/
 - **match_predictions**: 경기 예측 데이터
 - **champion_votes**: 우승팀 투표 데이터
 
+### 투표 및 평가 시스템
+- **mvp_votes**: MVP 투표 데이터
+- **best6_votes**: 베스트6 투표 데이터 (포지션별)
+- **comments**: 댓글 시스템 (경기/사진/팀별)
+- **comment_reactions**: 댓글 좋아요/싫어요
+
 ### 미디어 및 추가 기능
 - **match_photos**: 경기 사진 (업로드, 캡션, 타입)
 - **team_photos**: 팀 사진 (로고, 단체사진, 훈련사진, 일반사진)
+- **matches**: 유튜브 링크 필드 추가 (하이라이트 영상)
 
 ### 권한 관리
 - Row Level Security (RLS) 비활성화 (클라이언트 사이드 인증 사용)
@@ -174,17 +192,22 @@ FcKopri/
 4. 실시간 경기 진행 관리 (골, 어시스트 입력)
 5. Man of the Match 선정
 6. 경기/팀 사진 업로드 및 관리
-7. 플레이오프 브래킷 생성
-8. 데이터 내보내기 (JSON, CSV, Excel)
+7. 유튜브 하이라이트 영상 연동
+8. 플레이오프 브래킷 생성
+9. 댓글 관리 (삭제 권한)
+10. 데이터 내보내기 (JSON, CSV, Excel)
 
 ### 사용자 기능
 1. 실시간 순위표 확인 (팀 순위 & 개인 순위)
 2. 경기 결과 예측 참여 ("경기 결과 맞히기")
-3. 우승팀 투표 참여
-4. 통계 및 차트 확인
-5. 캘린더 뷰로 경기 일정 확인
-6. 경기/팀 사진 갤러리 보기
-7. 전역 검색 기능 사용
+3. 우승팀 예측 참여 ("우승팀 맞히기")
+4. MVP 투표 및 베스트6 투표 참여
+5. 하이라이트 영상 시청
+6. 댓글 작성 및 좋아요/싫어요
+7. 통계 및 차트 확인
+8. 캘린더 뷰로 경기 일정 확인
+9. 경기/팀 사진 갤러리 보기
+10. 전역 검색 기능 사용
 
 ## 🔄 실시간 기능
 
@@ -256,7 +279,8 @@ FcKopri/
 - ✅ 자동 순위표 계산 (팀 순위 & 개인 순위)
 - ✅ 플레이오프 토너먼트 시스템
 - ✅ 경기 예측 시스템 ("경기 결과 맞히기")
-- ✅ 우승팀 투표 기능
+- ✅ 우승팀 예측 기능 ("우승팀 맞히기")
+- ✅ MVP/베스트6 투표 시스템 (포지션별)
 - ✅ 실시간 알림 시스템
 - ✅ 데이터 내보내기 (JSON/CSV/Excel)
 - ✅ 다크모드 지원
@@ -269,6 +293,8 @@ FcKopri/
 - ✅ Man of the Match 선정 시스템
 - ✅ 개인 순위 시스템 (공격포인트, MOTM 횟수)
 - ✅ 실시간 예측 피드
+- ✅ 유튜브 하이라이트 영상 연동
+- ✅ 댓글 시스템 (경기/사진/팀별, 답글, 좋아요/싫어요)
 
 ## 🚀 향후 개발 계획
 

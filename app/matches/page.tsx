@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
-import { PlusIcon, CalendarIcon, ClockIcon, FireIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, CalendarIcon, ClockIcon, FireIcon, PlayIcon } from '@heroicons/react/24/outline'
 import { AdminOnly } from '@/components/AdminRoute'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
@@ -18,6 +18,8 @@ interface MatchWithTeams {
   home_score: number | null
   away_score: number | null
   status: string
+  youtube_url?: string
+  youtube_title?: string
   created_at: string
   home_team: { name: string } | null
   away_team: { name: string } | null
@@ -283,7 +285,15 @@ export default function MatchesPage() {
                           </div>
                         )}
                       </div>
-                      {getStatusBadge(match.status)}
+                      <div className="flex items-center space-x-2">
+                        {match.youtube_url && (
+                          <div className="flex items-center px-2 py-1 bg-red-100 text-red-600 rounded-full text-xs">
+                            <PlayIcon className="w-3 h-3 mr-1" />
+                            영상
+                          </div>
+                        )}
+                        {getStatusBadge(match.status)}
+                      </div>
                     </div>
 
                     <div className="flex items-center justify-center space-x-8">

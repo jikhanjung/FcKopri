@@ -20,6 +20,8 @@ import MatchPrediction from '@/components/MatchPrediction'
 import LivePredictionFeed from '@/components/LivePredictionFeed'
 import MatchPhotos from '@/components/MatchPhotos'
 import ManOfTheMatchSelector from '@/components/ManOfTheMatchSelector'
+import CommentSection from '@/components/CommentSection'
+import YouTubeManager from '@/components/YouTubeManager'
 
 interface Player {
   id: string
@@ -461,9 +463,32 @@ export default function MatchDetailPage() {
           </div>
         )}
 
+        {/* 하이라이트 영상 */}
+        <div className="mt-8">
+          <YouTubeManager
+            matchId={match.id}
+            currentYouTubeUrl={match.youtube_url}
+            currentYouTubeTitle={match.youtube_title}
+            currentYouTubeThumbnail={match.youtube_thumbnail_url}
+            currentYouTubeDuration={match.youtube_duration}
+            onYouTubeUpdate={(data) => {
+              setMatch(prev => prev ? { ...prev, ...data } : null)
+            }}
+          />
+        </div>
+
         {/* 경기 사진 */}
         <div className="mt-8">
           <MatchPhotos matchId={match.id} />
+        </div>
+
+        {/* 댓글 섹션 */}
+        <div className="mt-8">
+          <CommentSection 
+            targetType="match" 
+            targetId={match.id} 
+            title={`${match.home_team?.name || '미정'} vs ${match.away_team?.name || '미정'} 댓글`}
+          />
         </div>
       </div>
     </div>

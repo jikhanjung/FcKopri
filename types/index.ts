@@ -35,6 +35,10 @@ export interface Match {
   home_score?: number
   away_score?: number
   status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled'
+  youtube_url?: string
+  youtube_title?: string
+  youtube_thumbnail_url?: string
+  youtube_duration?: string
   created_at: string
 }
 

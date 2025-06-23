@@ -16,6 +16,7 @@ import { AdminOnly } from '@/components/AdminRoute'
 import SearchInput from '@/components/SearchInput'
 import FilterDropdown from '@/components/FilterDropdown'
 import TeamPhotos from '@/components/TeamPhotos'
+import CommentSection from '@/components/CommentSection'
 
 export default function TeamDetailPage() {
   const params = useParams()
@@ -430,6 +431,17 @@ export default function TeamDetailPage() {
         {team && (
           <div className="mt-8">
             <TeamPhotos teamId={team.id} teamName={team.name} />
+          </div>
+        )}
+
+        {/* 댓글 섹션 */}
+        {team && (
+          <div className="mt-8">
+            <CommentSection 
+              targetType="team" 
+              targetId={team.id} 
+              title={`${team.name} 팀 댓글`}
+            />
           </div>
         )}
       </div>

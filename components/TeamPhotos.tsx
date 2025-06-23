@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import CommentSection from './CommentSection'
 import { 
   PhotoIcon, 
   PlusIcon, 
@@ -487,31 +488,40 @@ export default function TeamPhotos({ teamId, teamName }: TeamPhotosProps) {
             )}
 
             {/* 이미지 */}
-            <div className="relative">
+            <div className="relative mb-6">
               <Image
                 src={getPhotoUrl(selectedPhoto.file_path)}
                 alt={selectedPhoto.caption || selectedPhoto.filename}
                 width={1200}
                 height={800}
-                className="max-w-full max-h-[80vh] object-contain rounded-lg"
+                className="max-w-full max-h-[60vh] object-contain rounded-lg"
+              />
+            </div>
+
+            {/* 댓글 섹션 */}
+            <div className="mb-6 max-h-[40vh] overflow-y-auto">
+              <CommentSection 
+                targetType="team_photo" 
+                targetId={selectedPhoto.id} 
+                title="사진 댓글"
               />
             </div>
 
             {/* 정보 */}
-            <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white p-4 rounded-b-lg">
+            <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
               <div className="flex items-center mb-2">
                 <span className="text-lg mr-2">
                   {getPhotoTypeInfo(selectedPhoto.photo_type).icon}
                 </span>
-                <span className="text-sm bg-kopri-blue px-2 py-1 rounded">
+                <span className="text-sm bg-kopri-blue text-white px-2 py-1 rounded">
                   {getPhotoTypeInfo(selectedPhoto.photo_type).label}
                 </span>
               </div>
-              <h4 className="font-semibold">{selectedPhoto.filename}</h4>
+              <h4 className="font-semibold text-gray-900 dark:text-gray-100">{selectedPhoto.filename}</h4>
               {selectedPhoto.caption && (
-                <p className="text-sm text-gray-300 mt-1">{selectedPhoto.caption}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{selectedPhoto.caption}</p>
               )}
-              <p className="text-xs text-gray-400 mt-2">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                 {new Date(selectedPhoto.created_at).toLocaleString('ko-KR')}
                 {selectedPhoto.file_size && (
                   <span className="ml-2">

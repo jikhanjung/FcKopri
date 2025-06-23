@@ -49,16 +49,19 @@ const navigation: NavigationItem[] = [
     icon: TrophyIcon,
     subItems: [
       { name: '팀 순위', href: '/standings' },
-      { name: '개인 순위', href: '/standings/players' }
+      { name: '개인 순위', href: '/standings/players' },
+      { name: '시상식', href: '/awards' }
     ]
   },
   { 
-    name: '예측', 
+    name: '투표', 
     href: '/predictions', 
     icon: PresentationChartBarIcon,
     subItems: [
       { name: '경기 결과 맞히기', href: '/predictions' },
-      { name: '우승팀 투표', href: '/champion' }
+      { name: '우승팀 맞히기', href: '/champion' },
+      { name: 'MVP 투표', href: '/awards?tab=vote-mvp' },
+      { name: '베스트6 투표', href: '/awards?tab=vote-best6' }
     ]
   },
 ]

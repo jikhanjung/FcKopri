@@ -83,7 +83,7 @@ export default function ChampionVoting() {
 
       if (teamsError) throw teamsError
 
-      // 투표 데이터 가져오기
+      // 예측 데이터 가져오기
       const { data: votesData, error: votesError } = await supabase
         .from('champion_votes')
         .select(`
@@ -112,7 +112,7 @@ export default function ChampionVoting() {
   const calculateStats = (votesData: any[], teamsData: Team[]) => {
     const teamVotes: { [key: string]: { count: number; totalConfidence: number } } = {}
     
-    // 각 팀별 투표 수와 평균 확신도 계산
+    // 각 팀별 예측 수와 평균 확신도 계산
     votesData.forEach(vote => {
       if (!teamVotes[vote.voted_team_id]) {
         teamVotes[vote.voted_team_id] = { count: 0, totalConfidence: 0 }
@@ -173,10 +173,10 @@ export default function ChampionVoting() {
         reason: ''
       })
       
-      alert('우승 후보 투표가 완료되었습니다!')
+      alert('우승팀 예측이 완료되었습니다!')
     } catch (error) {
       console.error('Error submitting vote:', error)
-      alert('투표 중 오류가 발생했습니다.')
+      alert('예측 중 오류가 발생했습니다.')
     }
   }
 
@@ -216,13 +216,13 @@ export default function ChampionVoting() {
 
   return (
     <div className="space-y-8">
-      {/* 우승 후보 투표 */}
+      {/* 우승팀 예측 */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center">
             <TrophyIcon className="w-6 h-6 text-yellow-500 mr-3" />
             <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-              우승 후보 투표 ({votes.length}명 참여)
+              우승팀 예측 ({votes.length}명 참여)
             </h2>
           </div>
           
@@ -230,14 +230,14 @@ export default function ChampionVoting() {
             onClick={() => setShowForm(!showForm)}
             className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600"
           >
-            {showForm ? '취소' : '투표하기'}
+            {showForm ? '취소' : '예측하기'}
           </button>
         </div>
 
-        {/* 투표 폼 */}
+        {/* 예측 폼 */}
         {showForm && (
           <div className="mb-6 p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
-            <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">우승 후보 투표</h3>
+            <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">우승팀 예측</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
@@ -249,7 +249,7 @@ export default function ChampionVoting() {
                   value={formData.user_name}
                   onChange={(e) => setFormData({ ...formData, user_name: e.target.value })}
                   className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                  placeholder="투표자 이름"
+                  placeholder="예측자 이름"
                 />
               </div>
               
@@ -328,7 +328,7 @@ export default function ChampionVoting() {
             {/* 이유 */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                투표 이유 (선택)
+                예측 이유 (선택)
               </label>
               <textarea
                 value={formData.reason}
@@ -343,17 +343,17 @@ export default function ChampionVoting() {
               onClick={submitVote}
               className="w-full bg-yellow-500 text-white py-2 rounded-lg hover:bg-yellow-600"
             >
-              투표하기
+              예측하기
             </button>
           </div>
         )}
 
-        {/* 투표 결과 */}
+        {/* 예측 결과 */}
         <div className="space-y-4">
           {voteStats.length === 0 ? (
             <div className="text-center py-8 text-gray-500 dark:text-gray-400">
               <div className="animate-pulse mb-2">🏆</div>
-              <div>첫 번째로 우승 후보를 투표해보세요!</div>
+              <div>첫 번째로 우승팀을 예측해보세요!</div>
             </div>
           ) : (
             voteStats.map((stat, index) => (
@@ -398,16 +398,16 @@ export default function ChampionVoting() {
         </div>
       </div>
 
-      {/* 최근 투표 */}
+      {/* 최근 예측 */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
           <ChartBarIcon className="w-5 h-5 text-kopri-blue mr-2" />
-          최근 투표
+          최근 예측
         </h3>
         
         {votes.length === 0 ? (
           <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-            아직 투표가 없습니다
+            아직 예측이 없습니다
           </div>
         ) : (
           <div className="space-y-3">

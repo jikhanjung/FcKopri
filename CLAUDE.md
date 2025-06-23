@@ -21,7 +21,8 @@ FcKopri는 제 1회 KOPRI CUP을 위한 완전한 축구 리그 관리 시스템
 - 순위표 자동 계산 (팀 순위 & 개인 순위)
 - 플레이오프 토너먼트 시스템
 - 경기 결과 예측 시스템
-- 우승팀 투표 기능
+- 우승팀 맞히기 기능
+- MVP/베스트6 투표 시스템 (포지션별)
 - 실시간 알림 시스템
 - 데이터 내보내기 (JSON/CSV/Excel)
 - 다크모드 지원
@@ -30,6 +31,8 @@ FcKopri는 제 1회 KOPRI CUP을 위한 완전한 축구 리그 관리 시스템
 - 캘린더 뷰
 - 경기/팀 사진 업로드 시스템
 - Man of the Match 선정 시스템
+- 유튜브 하이라이트 영상 연동
+- 댓글 시스템 (경기/사진/팀별, 답글, 좋아요/싫어요)
 
 ## 개발 명령어
 
@@ -59,8 +62,10 @@ npm run type-check
 FcKopri/
 ├── app/                     # Next.js 14 App Router
 │   ├── admin/              # 관리자 페이지 (로그인, 내보내기)
+│   ├── api/                # API 엔드포인트 (IP 가져오기)
+│   ├── awards/             # MVP/베스트6 투표 및 시상식
 │   ├── calendar/           # 캘린더 뷰
-│   ├── champion/           # 우승팀 투표
+│   ├── champion/           # 우승팀 맞히기
 │   ├── matches/            # 경기 관리 및 상세
 │   ├── playoffs/           # 플레이오프 토너먼트
 │   ├── predictions/        # 경기 예측
@@ -77,6 +82,7 @@ FcKopri/
 │   ├── ChampionVoting.tsx  # 우승팀 투표 컴포넌트
 │   ├── ChampionWidget.tsx  # 홈페이지 우승 후보 위젯
 │   ├── ClientLayout.tsx    # 클라이언트 레이아웃 래퍼
+│   ├── CommentSection.tsx  # 댓글 시스템 컴포넌트
 │   ├── GlobalSearch.tsx    # 전역 검색 기능
 │   ├── LivePredictionFeed.tsx # 실시간 예측 피드
 │   ├── ManOfTheMatchSelector.tsx # MOTM 선정 컴포넌트
@@ -86,7 +92,9 @@ FcKopri/
 │   ├── Navigation.tsx      # 메인 네비게이션
 │   ├── NotificationBell.tsx # 알림 벨
 │   ├── TeamPhotos.tsx      # 팀 사진 업로드 컴포넌트
-│   └── ThemeToggle.tsx     # 다크모드 토글
+│   ├── ThemeToggle.tsx     # 다크모드 토글
+│   ├── YouTubeManager.tsx  # 유튜브 영상 관리 컴포넌트
+│   └── ...
 ├── contexts/               # React Context API
 │   ├── AuthContext.tsx     # 관리자 인증 상태
 │   ├── NotificationContext.tsx # 실시간 알림
@@ -103,7 +111,10 @@ FcKopri/
 │   ├── champion_votes_table.sql
 │   ├── add_man_of_the_match.sql
 │   ├── match_photos_table.sql
-│   └── team_photos_table.sql
+│   ├── team_photos_table.sql
+│   ├── mvp_votes_table.sql
+│   ├── comments_table.sql
+│   └── add_youtube_links.sql
 ├── README.md               # 프로젝트 문서
 ├── FEATURES.md             # 기능 명세서
 └── CLAUDE.md               # Claude Code 가이드 (이 파일)
@@ -115,7 +126,7 @@ FcKopri/
 - `competitions` - 대회 정보 (KOPRI CUP)
 - `teams` - 팀 정보 (이름, 부서)
 - `players` - 선수 정보 (이름, 소속팀)
-- `matches` - 리그 경기 (일정, 결과, 상태, MOTM)
+- `matches` - 리그 경기 (일정, 결과, 상태, MOTM, 유튜브 링크)
 - `playoff_matches` - 플레이오프 경기
 
 ### 실시간 기능 테이블
@@ -123,9 +134,16 @@ FcKopri/
 - `match_predictions` - 경기 예측 (사용자별 스코어 예측)
 - `champion_votes` - 우승팀 투표 (팀별 투표 및 확신도)
 
+### 투표 및 평가 시스템 테이블
+- `mvp_votes` - MVP 투표 데이터 (IP 기반 중복 방지)
+- `best6_votes` - 베스트6 투표 데이터 (포지션별, IP 기반)
+- `comments` - 댓글 시스템 (경기/사진/팀별, 중첩 답글)
+- `comment_reactions` - 댓글 좋아요/싫어요
+
 ### 미디어 및 추가 기능 테이블
 - `match_photos` - 경기 사진 (업로드, 캡션, 타입)
 - `team_photos` - 팀 사진 (로고, 단체사진, 훈련사진, 일반사진)
+- `matches` - 유튜브 링크 필드 추가 (하이라이트 영상)
 
 ### Row Level Security (RLS)
 - **현재 상태**: 비활성화 (client-side 인증 사용)
@@ -261,14 +279,15 @@ useEffect(() => {
 
 ### 용어 통일
 - "예측" → "경기 결과 맞히기"
+- "우승팀 투표" → "우승팀 맞히기"
 - "예측하기" → "참여하기"
 - "포인트" → "공격포인트"
 - 사용자 친화적 용어 사용
 
 ### 네비게이션 구조
-- "예측" 드롭다운으로 통합
-- 서브메뉴: "경기 결과 맞히기", "우승팀 투표"
-- "순위" 드롭다운: "팀 순위", "개인 순위"
+- "투표" 드롭다운으로 통합 (기존 "예측" 메뉴에서 변경)
+- 투표 서브메뉴: "경기 결과 맞히기", "우승팀 맞히기", "MVP 투표", "베스트6 투표"
+- "순위" 드롭다운: "팀 순위", "개인 순위", "시상식"
 - "통계" 메뉴 숨김 처리
 - 모바일 반응형 햄버거 메뉴
 
@@ -295,6 +314,24 @@ useEffect(() => {
 - MOTM 횟수 추가 표시
 - 경기당 평균 포인트 계산
 
+### MVP/베스트6 투표 시스템 (풋살 대회 특화)
+- MVP 투표: IP 기반 중복 방지, 팬 투표로 최우수선수 선정
+- 베스트6 투표: 포지션별 선정 (공격수 1명, 미드필더 2명, 수비수 2명, 골키퍼 1명)
+- 실시간 투표 결과 집계 및 표시
+- 시상식 페이지에서 결과 확인
+
+### 댓글 시스템
+- 경기별/사진별/팀별 댓글 작성
+- 중첩 답글 지원 (최대 2단계)
+- 좋아요/싫어요 기능
+- IP 기반 작성자 식별 및 관리자 댓글 관리
+
+### 유튜브 영상 연동
+- 경기별 하이라이트 영상 링크 추가
+- 유튜브 URL 자동 검증 및 썸네일 생성
+- 임베드 영상 플레이어 제공
+- 관리자 영상 관리 기능
+
 ## 배포 가이드
 
 ### Vercel 배포 (권장)
@@ -311,6 +348,9 @@ useEffect(() => {
    - `add_man_of_the_match.sql`
    - `match_photos_table.sql`
    - `team_photos_table.sql`
+   - `mvp_votes_table.sql`
+   - `comments_table.sql`
+   - `add_youtube_links.sql`
 3. RLS 정책 비활성화 (클라이언트 사이드 인증 사용)
 4. Supabase Storage 버킷 생성:
    - `match-photos` (경기 사진)
@@ -320,7 +360,7 @@ useEffect(() => {
 
 **✅ 완전 완성된 프로덕션 준비 상태**
 
-모든 핵심 기능이 구현되어 있으며, 실제 축구 리그 운영에 바로 사용할 수 있는 수준입니다.
+모든 핵심 기능이 구현되어 있으며, 실제 풋살 리그 운영에 바로 사용할 수 있는 수준입니다.
 
 ### 완성도
 - 전체 기능: 100% 완성
@@ -337,8 +377,9 @@ useEffect(() => {
 - ✅ 실시간 경기 진행 (골/어시스트)
 - ✅ 자동 순위표 계산 (팀 순위 & 개인 순위)
 - ✅ 플레이오프 토너먼트
-- ✅ 경기 예측 시스템
-- ✅ 우승팀 투표 기능
+- ✅ 경기 결과 맞히기 시스템
+- ✅ 우승팀 맞히기 기능
+- ✅ MVP/베스트6 투표 시스템 (풋살 대회 특화)
 - ✅ 실시간 알림 시스템
 - ✅ 데이터 내보내기 (JSON/CSV/Excel)
 - ✅ 다크모드 지원
@@ -352,6 +393,8 @@ useEffect(() => {
 - ✅ Man of the Match 선정 시스템
 - ✅ 개인 순위 시스템 (공격포인트, MOTM 횟수)
 - ✅ 실시간 예측 피드
+- ✅ 유튜브 하이라이트 영상 연동
+- ✅ 댓글 시스템 (경기/사진/팀별, 답글, 좋아요/싫어요)
 - ✅ Supabase Storage 이미지 최적화
 
 제 1회 KOPRI CUP 성공적인 개최를 위한 모든 준비가 완료되었습니다.
