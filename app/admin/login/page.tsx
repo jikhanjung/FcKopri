@@ -95,12 +95,6 @@ export default function AdminLoginPage() {
               {loading ? '로그인 중...' : '로그인'}
             </button>
           </form>
-
-          {/* 개발용 힌트 */}
-          <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-            <h3 className="text-sm font-medium text-yellow-800 mb-1">개발용 정보</h3>
-            <p className="text-sm text-yellow-700">비밀번호: <code className="bg-yellow-100 px-1 rounded">kopri2025</code></p>
-          </div>
         </div>
       </div>
     </div>
