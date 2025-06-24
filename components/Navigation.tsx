@@ -39,8 +39,7 @@ const navigation: NavigationItem[] = [
     icon: CalendarIcon,
     subItems: [
       { name: '경기 일정', href: '/matches' },
-      { name: '캘린더', href: '/calendar' },
-      { name: '플레이오프', href: '/playoffs' }
+      { name: '캘린더', href: '/calendar' }
     ]
   },
   { 
