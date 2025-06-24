@@ -340,19 +340,27 @@ useEffect(() => {
 3. 자동 배포 활성화
 
 ### 데이터베이스 설정
+
+#### 방법 1: 완전한 백업에서 복원 (권장)
+```bash
+# 1. 기존 프로젝트에서 백업 생성
+node backup-data.js
+
+# 2. 새 Supabase 프로젝트에서 스키마 복원
+# SQL Editor에서 백업된 schema.sql 실행
+
+# 3. 데이터 복원 (필요시)
+node restore-data.js
+```
+
+#### 방법 2: 수동 설정
 1. Supabase 프로젝트 생성
-2. SQL 파일들을 순서대로 실행:
-   - `match_events_table.sql`
-   - `match_predictions_table.sql`
-   - `champion_votes_table.sql`
-   - `add_man_of_the_match.sql`
-   - `match_photos_table.sql`
-   - `team_photos_table.sql`
-   - `mvp_votes_table.sql`
-   - `comments_table.sql`
-   - `add_youtube_links.sql`
-3. RLS 정책 비활성화 (클라이언트 사이드 인증 사용)
-4. Supabase Storage 버킷 생성:
+2. `sql/` 디렉토리의 파일들을 순서대로 실행:
+   - `00_initial_schema.sql` (기본 테이블)
+   - `01_match_events_table.sql` ~ `11_playoff_matches_table.sql` (확장 테이블)
+   - `20_storage_setup.sql` (Storage 설정)
+   - `30_security_policies.sql` (보안 정책)
+3. Storage 버킷 자동 생성됨:
    - `match-photos` (경기 사진)
    - `team-photos` (팀 사진)
 
@@ -396,5 +404,28 @@ useEffect(() => {
 - ✅ 유튜브 하이라이트 영상 연동
 - ✅ 댓글 시스템 (경기/사진/팀별, 답글, 좋아요/싫어요)
 - ✅ Supabase Storage 이미지 최적화
+- ✅ 완전한 백업/복원 시스템 (스키마 + 데이터 + 보안정책)
+
+## 백업 및 마이그레이션
+
+### 완전한 백업 시스템
+- **스키마 백업**: `sql/` 디렉토리의 모든 파일을 통합하여 완전한 스키마 생성
+- **데이터 백업**: 모든 테이블의 데이터를 JSON 형태로 백업
+- **보안 정책 포함**: RLS, Storage 정책까지 완전히 백업
+- **검증된 백업**: 실제 존재하는 테이블만 백업
+
+### 백업 명령어
+```bash
+# 완전한 백업 (스키마 + 데이터)
+node backup-data.js
+
+# 데이터 복원
+node restore-data.js
+```
+
+### SQL 스키마 관리
+- `sql/` 디렉토리에 모든 스키마 파일을 번호순으로 정리
+- 의존성 순서에 따른 안전한 실행 보장
+- 개별 실행 또는 통합 백업 모두 지원
 
 제 1회 KOPRI CUP 성공적인 개최를 위한 모든 준비가 완료되었습니다.
