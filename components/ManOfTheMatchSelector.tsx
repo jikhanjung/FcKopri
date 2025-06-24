@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import Link from 'next/link'
 import { 
   StarIcon,
   XMarkIcon,
@@ -175,9 +176,12 @@ export default function ManOfTheMatchSelector({
             <div className="flex items-center">
               <StarIconSolid className="w-8 h-8 text-yellow-500 mr-3" />
               <div>
-                <h4 className="text-lg font-semibold text-yellow-800 dark:text-yellow-200">
+                <Link 
+                  href={`/players/${currentMotm.id}`}
+                  className="text-lg font-semibold text-yellow-800 dark:text-yellow-200 hover:text-yellow-600 dark:hover:text-yellow-100 transition-colors"
+                >
                   {currentMotm.name}
-                </h4>
+                </Link>
                 <p className="text-yellow-700 dark:text-yellow-300 text-sm">
                   {currentMotm.teamName}
                 </p>

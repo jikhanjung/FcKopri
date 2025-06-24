@@ -281,7 +281,12 @@ export default function TeamDetailPage() {
                           {player.jersey_number || '?'}
                         </div>
                         <div>
-                          <div className="font-medium text-gray-900">{player.name}</div>
+                          <Link 
+                            href={`/players/${player.id}`}
+                            className="font-medium text-gray-900 hover:text-kopri-blue dark:hover:text-kopri-lightblue transition-colors"
+                          >
+                            {player.name}
+                          </Link>
                           <div className="text-sm text-gray-600">{player.position || '포지션 미정'}</div>
                         </div>
                       </div>
@@ -342,7 +347,12 @@ export default function TeamDetailPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{player.name}</div>
+                        <Link 
+                          href={`/players/${player.id}`}
+                          className="text-sm font-medium text-gray-900 hover:text-kopri-blue dark:hover:text-kopri-lightblue transition-colors"
+                        >
+                          {player.name}
+                        </Link>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-600">{player.position || '-'}</div>

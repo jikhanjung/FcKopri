@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { TrophyIcon, UserIcon } from '@heroicons/react/24/outline'
+import Link from 'next/link'
 
 interface PlayerStats {
   player_id: string
@@ -346,7 +347,12 @@ export default function PlayersStandingsPage() {
                     {/* 선수명 (팀) */}
                     <div className="col-span-2">
                       <div className="font-semibold text-gray-900 dark:text-gray-100">
-                        {player.player_name}
+                        <Link 
+                          href={`/players/${player.player_id}`}
+                          className="hover:text-kopri-blue dark:hover:text-kopri-lightblue transition-colors"
+                        >
+                          {player.player_name}
+                        </Link>
                       </div>
                       <div className="text-sm text-gray-600 dark:text-gray-400">
                         {player.team_name}

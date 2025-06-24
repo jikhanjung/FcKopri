@@ -69,7 +69,7 @@ export default function GlobalSearch() {
               type: 'player',
               title: player.name,
               subtitle: `${(player.teams as any)?.name || '팀 미정'} · ${player.department || '부서 미정'}`,
-              href: `/teams/${(player.teams as any)?.id}`
+              href: `/players/${player.id}`
             })
           })
         }

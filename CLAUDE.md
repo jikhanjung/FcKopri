@@ -69,6 +69,7 @@ FcKopri/
 │   ├── matches/            # 경기 관리 및 상세
 │   ├── playoffs/           # 플레이오프 토너먼트
 │   ├── predictions/        # 경기 예측
+│   ├── players/            # 선수 개인 프로필
 │   ├── standings/          # 순위표
 │   │   ├── page.tsx        # 팀 순위표
 │   │   └── players/        # 개인 순위표
@@ -87,8 +88,10 @@ FcKopri/
 │   ├── LivePredictionFeed.tsx # 실시간 예측 피드
 │   ├── ManOfTheMatchSelector.tsx # MOTM 선정 컴포넌트
 │   ├── MatchLive.tsx       # 실시간 경기 진행 관리
+│   ├── MatchEvents.tsx     # 경기 이벤트 타임라인 컴포넌트
 │   ├── MatchPhotos.tsx     # 경기 사진 업로드 컴포넌트
 │   ├── MatchPrediction.tsx # 경기 예측 컴포넌트
+│   ├── MatchScoreEvents.tsx # 스코어 카드 내 축약 이벤트
 │   ├── Navigation.tsx      # 메인 네비게이션
 │   ├── NotificationBell.tsx # 알림 벨
 │   ├── TeamPhotos.tsx      # 팀 사진 업로드 컴포넌트
@@ -404,6 +407,8 @@ node restore-data.js
 - ✅ 실시간 예측 피드
 - ✅ 경기별 다중 영상 시스템 (하이라이트, 골 장면, 전체 경기, 인터뷰, 분석)
 - ✅ 댓글 시스템 (경기/사진/팀별, 답글, 좋아요/싫어요)
+- ✅ 선수 개인 프로필 페이지 (상세 통계, 경기별 기록, 전사이트 연결점)
+- ✅ 경기 이벤트 표시 시스템 (스코어 카드 내 축약 + 상세 타임라인, 선수명 클릭)
 - ✅ Supabase Storage 이미지 최적화
 - ✅ 완전한 백업/복원 시스템 (스키마 + 데이터 + 보안정책)
 

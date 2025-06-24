@@ -22,6 +22,8 @@ import MatchPhotos from '@/components/MatchPhotos'
 import ManOfTheMatchSelector from '@/components/ManOfTheMatchSelector'
 import CommentSection from '@/components/CommentSection'
 import MultipleYouTubeManager from '@/components/MultipleYouTubeManager'
+import MatchEvents from '@/components/MatchEvents'
+import MatchScoreEvents from '@/components/MatchScoreEvents'
 
 interface Player {
   id: string
@@ -305,15 +307,24 @@ export default function MatchDetailPage() {
             </div>
           </div>
 
+          {/* 스코어 카드 내 이벤트 표시 (완료된 경기만) */}
+          {match.status === 'completed' && match.home_team && match.away_team && (
+            <MatchScoreEvents
+              matchId={match.id}
+              homeTeamId={match.home_team.id}
+              awayTeamId={match.away_team.id}
+            />
+          )}
+
           {editMode && (
-            <div className="mt-8 pt-6 border-t border-gray-200">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 경기 상태
               </label>
               <select
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-kopri-blue"
+                className="w-full max-w-xs px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-kopri-blue dark:bg-gray-700 dark:text-gray-100"
               >
                 <option value="scheduled">예정</option>
                 <option value="in_progress">진행중</option>
@@ -351,29 +362,29 @@ export default function MatchDetailPage() {
         )}
 
         {/* 경기 상세 정보 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           {/* 경기 정보 */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
               <CalendarIcon className="w-5 h-5 mr-2" />
               경기 정보
             </h3>
             <div className="space-y-3">
               <div className="flex justify-between">
-                <span className="text-gray-600">상태:</span>
+                <span className="text-gray-600 dark:text-gray-400">상태:</span>
                 <span>{getStatusBadge(match.status)}</span>
               </div>
               {match.match_date && (
                 <>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">날짜:</span>
-                    <span className="font-medium">
+                    <span className="text-gray-600 dark:text-gray-400">날짜:</span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">
                       {format(new Date(match.match_date), 'yyyy년 M월 d일 (EEE)', { locale: ko })}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">시간:</span>
-                    <span className="font-medium">
+                    <span className="text-gray-600 dark:text-gray-400">시간:</span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">
                       {format(new Date(match.match_date), 'HH:mm')}
                     </span>
                   </div>
@@ -383,22 +394,22 @@ export default function MatchDetailPage() {
           </div>
 
           {/* 결과 요약 */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
               <TrophyIcon className="w-5 h-5 mr-2" />
               경기 결과
             </h3>
             {match.status === 'completed' && match.home_score !== null && match.away_score !== null ? (
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600">최종 스코어:</span>
-                  <span className="text-xl font-bold text-kopri-blue">
+                  <span className="text-gray-600 dark:text-gray-400">최종 스코어:</span>
+                  <span className="text-xl font-bold text-kopri-blue dark:text-kopri-lightblue">
                     {match.home_score} - {match.away_score}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">승리 팀:</span>
-                  <span className="font-medium">
+                  <span className="text-gray-600 dark:text-gray-400">승리 팀:</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">
                     {match.home_score > match.away_score 
                       ? match.home_team?.name 
                       : match.home_score < match.away_score 
@@ -408,14 +419,14 @@ export default function MatchDetailPage() {
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">득점 차:</span>
-                  <span className="font-medium">
+                  <span className="text-gray-600 dark:text-gray-400">득점 차:</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">
                     {Math.abs(match.home_score - match.away_score)}점
                   </span>
                 </div>
               </div>
             ) : (
-              <p className="text-gray-500">
+              <p className="text-gray-500 dark:text-gray-400">
                 {match.status === 'scheduled' && '경기 예정'}
                 {match.status === 'in_progress' && '경기 진행중'}
                 {match.status === 'cancelled' && '경기 취소'}
@@ -423,6 +434,19 @@ export default function MatchDetailPage() {
             )}
           </div>
         </div>
+
+        {/* 경기 이벤트 (완료된 경기만) */}
+        {match.status === 'completed' && match.home_team && match.away_team && (
+          <div className="mb-8">
+            <MatchEvents
+              matchId={match.id}
+              homeTeamId={match.home_team.id}
+              awayTeamId={match.away_team.id}
+              homeTeamName={match.home_team.name}
+              awayTeamName={match.away_team.name}
+            />
+          </div>
+        )}
 
         {/* 경기 예측 */}
         <div className="mt-8">
