@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Player } from '@/types'
@@ -51,7 +51,7 @@ const BEST6_POSITIONS = [
   { type: 'goalkeeper', slot: 1, name: '골키퍼', icon: '🥅' }
 ] as const
 
-export default function AwardsPage() {
+function AwardsContent() {
   const searchParams = useSearchParams()
   const [players, setPlayers] = useState<PlayerWithTeam[]>([])
   const [mvpStats, setMvpStats] = useState<VoteStats[]>([])
@@ -89,6 +89,8 @@ export default function AwardsPage() {
           position,
           jersey_number,
           department,
+          created_at,
+          team_id,
           teams!inner(name)
         `)
 
@@ -96,7 +98,7 @@ export default function AwardsPage() {
 
       const playersWithTeam = playersData?.map(player => ({
         ...player,
-        team_name: Array.isArray(player.teams) ? player.teams[0]?.name : player.teams?.name
+        team_name: Array.isArray(player.teams) ? player.teams[0]?.name : (player.teams as any)?.name
       })) || []
 
       setPlayers(playersWithTeam)
@@ -130,7 +132,7 @@ export default function AwardsPage() {
       data?.forEach(vote => {
         const playerId = vote.voted_player_id
         const playerData = Array.isArray(vote.players) ? vote.players[0] : vote.players
-        const teamData = Array.isArray(playerData?.teams) ? playerData?.teams[0] : playerData?.teams
+        const teamData = Array.isArray(playerData?.teams) ? playerData?.teams[0] : (playerData as any)?.teams
         
         if (!statsMap[playerId]) {
           statsMap[playerId] = {
@@ -176,7 +178,7 @@ export default function AwardsPage() {
         const playerId = vote.voted_player_id
         const positionKey = `${vote.position_type}-${vote.position_slot}`
         const playerData = Array.isArray(vote.players) ? vote.players[0] : vote.players
-        const teamData = Array.isArray(playerData?.teams) ? playerData?.teams[0] : playerData?.teams
+        const teamData = Array.isArray(playerData?.teams) ? playerData?.teams[0] : (playerData as any)?.teams
         
         if (!statsByPosition[positionKey][playerId]) {
           statsByPosition[positionKey][playerId] = {
@@ -556,5 +558,26 @@ export default function AwardsPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function AwardsPage() {
+  return (
+    <Suspense fallback={
+      <div className="p-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-6"></div>
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    }>
+      <AwardsContent />
+    </Suspense>
   )
 }

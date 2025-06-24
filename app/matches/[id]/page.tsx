@@ -38,6 +38,10 @@ interface MatchDetail {
   away_score: number | null
   status: string
   man_of_the_match_id: string | null
+  youtube_url?: string | null
+  youtube_title?: string | null
+  youtube_thumbnail_url?: string | null
+  youtube_duration?: string | null
   created_at: string
   home_team: { id: string; name: string; players: Player[] } | null
   away_team: { id: string; name: string; players: Player[] } | null
@@ -356,10 +360,6 @@ export default function MatchDetailPage() {
             </h3>
             <div className="space-y-3">
               <div className="flex justify-between">
-                <span className="text-gray-600">경기 번호:</span>
-                <span className="font-medium">#{match.id.slice(-8)}</span>
-              </div>
-              <div className="flex justify-between">
                 <span className="text-gray-600">상태:</span>
                 <span>{getStatusBadge(match.status)}</span>
               </div>
@@ -467,10 +467,10 @@ export default function MatchDetailPage() {
         <div className="mt-8">
           <YouTubeManager
             matchId={match.id}
-            currentYouTubeUrl={match.youtube_url}
-            currentYouTubeTitle={match.youtube_title}
-            currentYouTubeThumbnail={match.youtube_thumbnail_url}
-            currentYouTubeDuration={match.youtube_duration}
+            currentYouTubeUrl={match.youtube_url || undefined}
+            currentYouTubeTitle={match.youtube_title || undefined}
+            currentYouTubeThumbnail={match.youtube_thumbnail_url || undefined}
+            currentYouTubeDuration={match.youtube_duration || undefined}
             onYouTubeUpdate={(data) => {
               setMatch(prev => prev ? { ...prev, ...data } : null)
             }}

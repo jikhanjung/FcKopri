@@ -153,7 +153,12 @@ export default function YouTubeManager({
       if (error) throw error
 
       setIsEditing(false)
-      onYouTubeUpdate?.(updateData)
+      onYouTubeUpdate?.({
+        youtube_url: updateData.youtube_url,
+        youtube_title: updateData.youtube_title,
+        youtube_thumbnail_url: updateData.youtube_thumbnail_url,
+        youtube_duration: updateData.youtube_duration || undefined
+      })
       alert('유튜브 링크가 저장되었습니다!')
 
     } catch (error) {
@@ -187,7 +192,12 @@ export default function YouTubeManager({
       setYoutubeUrl('')
       setVideoInfo(null)
       setIsEditing(false)
-      onYouTubeUpdate?.(updateData)
+      onYouTubeUpdate?.({
+        youtube_url: undefined,
+        youtube_title: undefined,
+        youtube_thumbnail_url: undefined,
+        youtube_duration: undefined
+      })
       alert('유튜브 링크가 삭제되었습니다!')
 
     } catch (error) {
