@@ -42,6 +42,23 @@ export interface Match {
   created_at: string
 }
 
+export interface MatchVideo {
+  id: string
+  match_id: string
+  video_type: 'highlight' | 'goals' | 'full_match' | 'interview' | 'analysis' | 'other'
+  title: string
+  youtube_url: string
+  youtube_video_id?: string
+  thumbnail_url?: string
+  duration?: string
+  description?: string
+  display_order: number
+  is_featured: boolean
+  uploaded_by: string
+  created_at: string
+  updated_at: string
+}
+
 export interface Standing {
   team_id: string
   team_name: string

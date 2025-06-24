@@ -34,6 +34,7 @@ const tables = [
   'match_predictions',
   'champion_votes',
   'match_photos',
+  'match_videos',
   'team_photos',
   'mvp_votes',
   'best6_votes',
@@ -111,6 +112,7 @@ async function generateSchemaSQL() {
       '09_add_youtube_links.sql',
       '10_best6_votes_table.sql',
       '11_playoff_matches_table.sql',
+      '12_match_videos_table.sql',
       '20_storage_setup.sql',
       '30_security_policies.sql'
     ];

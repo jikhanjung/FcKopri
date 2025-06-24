@@ -31,7 +31,7 @@ FcKopri는 제 1회 KOPRI CUP을 위한 완전한 축구 리그 관리 시스템
 - 캘린더 뷰
 - 경기/팀 사진 업로드 시스템
 - Man of the Match 선정 시스템
-- 유튜브 하이라이트 영상 연동
+- 경기별 다중 영상 시스템 (하이라이트, 골 장면, 전체 경기, 인터뷰, 분석 등)
 - 댓글 시스템 (경기/사진/팀별, 답글, 좋아요/싫어요)
 
 ## 개발 명령어
@@ -114,7 +114,8 @@ FcKopri/
 │   ├── team_photos_table.sql
 │   ├── mvp_votes_table.sql
 │   ├── comments_table.sql
-│   └── add_youtube_links.sql
+│   ├── add_youtube_links.sql
+│   └── match_videos_table.sql
 ├── README.md               # 프로젝트 문서
 ├── FEATURES.md             # 기능 명세서
 └── CLAUDE.md               # Claude Code 가이드 (이 파일)
@@ -126,7 +127,7 @@ FcKopri/
 - `competitions` - 대회 정보 (KOPRI CUP)
 - `teams` - 팀 정보 (이름, 부서)
 - `players` - 선수 정보 (이름, 소속팀)
-- `matches` - 리그 경기 (일정, 결과, 상태, MOTM, 유튜브 링크)
+- `matches` - 리그 경기 (일정, 결과, 상태, MOTM)
 - `playoff_matches` - 플레이오프 경기
 
 ### 실시간 기능 테이블
@@ -143,7 +144,7 @@ FcKopri/
 ### 미디어 및 추가 기능 테이블
 - `match_photos` - 경기 사진 (업로드, 캡션, 타입)
 - `team_photos` - 팀 사진 (로고, 단체사진, 훈련사진, 일반사진)
-- `matches` - 유튜브 링크 필드 추가 (하이라이트 영상)
+- `match_videos` - 경기별 다중 영상 (하이라이트, 골 장면, 전체 경기, 인터뷰, 분석, 기타)
 
 ### Row Level Security (RLS)
 - **현재 상태**: 비활성화 (client-side 인증 사용)
@@ -357,7 +358,7 @@ node restore-data.js
 1. Supabase 프로젝트 생성
 2. `sql/` 디렉토리의 파일들을 순서대로 실행:
    - `00_initial_schema.sql` (기본 테이블)
-   - `01_match_events_table.sql` ~ `11_playoff_matches_table.sql` (확장 테이블)
+   - `01_match_events_table.sql` ~ `12_match_videos_table.sql` (확장 테이블)
    - `20_storage_setup.sql` (Storage 설정)
    - `30_security_policies.sql` (보안 정책)
 3. Storage 버킷 자동 생성됨:
@@ -401,7 +402,7 @@ node restore-data.js
 - ✅ Man of the Match 선정 시스템
 - ✅ 개인 순위 시스템 (공격포인트, MOTM 횟수)
 - ✅ 실시간 예측 피드
-- ✅ 유튜브 하이라이트 영상 연동
+- ✅ 경기별 다중 영상 시스템 (하이라이트, 골 장면, 전체 경기, 인터뷰, 분석)
 - ✅ 댓글 시스템 (경기/사진/팀별, 답글, 좋아요/싫어요)
 - ✅ Supabase Storage 이미지 최적화
 - ✅ 완전한 백업/복원 시스템 (스키마 + 데이터 + 보안정책)

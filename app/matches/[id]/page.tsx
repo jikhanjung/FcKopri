@@ -21,7 +21,7 @@ import LivePredictionFeed from '@/components/LivePredictionFeed'
 import MatchPhotos from '@/components/MatchPhotos'
 import ManOfTheMatchSelector from '@/components/ManOfTheMatchSelector'
 import CommentSection from '@/components/CommentSection'
-import YouTubeManager from '@/components/YouTubeManager'
+import MultipleYouTubeManager from '@/components/MultipleYouTubeManager'
 
 interface Player {
   id: string
@@ -463,18 +463,9 @@ export default function MatchDetailPage() {
           </div>
         )}
 
-        {/* 하이라이트 영상 */}
+        {/* 경기 영상 */}
         <div className="mt-8">
-          <YouTubeManager
-            matchId={match.id}
-            currentYouTubeUrl={match.youtube_url || undefined}
-            currentYouTubeTitle={match.youtube_title || undefined}
-            currentYouTubeThumbnail={match.youtube_thumbnail_url || undefined}
-            currentYouTubeDuration={match.youtube_duration || undefined}
-            onYouTubeUpdate={(data) => {
-              setMatch(prev => prev ? { ...prev, ...data } : null)
-            }}
-          />
+          <MultipleYouTubeManager matchId={match.id} />
         </div>
 
         {/* 경기 사진 */}

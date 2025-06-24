@@ -8,7 +8,10 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE IF NOT EXISTS competitions (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    year INTEGER NOT NULL,
+    description TEXT,
+    year INTEGER,
+    start_date DATE,
+    end_date DATE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
@@ -18,6 +21,7 @@ CREATE TABLE IF NOT EXISTS teams (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     department VARCHAR(255),
+    logo_url TEXT,
     competition_id UUID REFERENCES competitions(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
@@ -29,6 +33,8 @@ CREATE TABLE IF NOT EXISTS players (
     name VARCHAR(255) NOT NULL,
     team_id UUID REFERENCES teams(id) ON DELETE CASCADE,
     position VARCHAR(50),
+    department TEXT,
+    jersey_number INTEGER,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
