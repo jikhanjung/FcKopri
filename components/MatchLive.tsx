@@ -45,7 +45,7 @@ interface MatchLiveProps {
 
 export default function MatchLive({ matchId, homeTeam, awayTeam, onScoreUpdate }: MatchLiveProps) {
   const [isLive, setIsLive] = useState(false)
-  const [currentMinute, setCurrentMinute] = useState(0)
+  const [currentTime, setCurrentTime] = useState(0) // 초 단위로 저장
   const [events, setEvents] = useState<MatchEvent[]>([])
   const [homeScore, setHomeScore] = useState(0)
   const [awayScore, setAwayScore] = useState(0)
@@ -55,7 +55,7 @@ export default function MatchLive({ matchId, homeTeam, awayTeam, onScoreUpdate }
   const [selectedTeam, setSelectedTeam] = useState<'home' | 'away'>('home')
   const [selectedPlayer, setSelectedPlayer] = useState('')
   const [assistPlayer, setAssistPlayer] = useState('')
-  const [eventMinute, setEventMinute] = useState(currentMinute)
+  const [eventMinute, setEventMinute] = useState(Math.floor(currentTime / 60))
 
   useEffect(() => {
     loadMatchEvents()
@@ -65,8 +65,8 @@ export default function MatchLive({ matchId, homeTeam, awayTeam, onScoreUpdate }
     let interval: NodeJS.Timeout
     if (isLive) {
       interval = setInterval(() => {
-        setCurrentMinute(prev => prev + 1)
-      }, 60000) // 1분마다 증가 (실제로는 더 짧게 설정 가능)
+        setCurrentTime(prev => prev + 1)
+      }, 1000) // 1초마다 증가
     }
     return () => clearInterval(interval)
   }, [isLive])
@@ -101,7 +101,7 @@ export default function MatchLive({ matchId, homeTeam, awayTeam, onScoreUpdate }
 
   const startMatch = () => {
     setIsLive(true)
-    setCurrentMinute(0)
+    setCurrentTime(0)
   }
 
   const pauseMatch = () => {
@@ -215,7 +215,7 @@ export default function MatchLive({ matchId, homeTeam, awayTeam, onScoreUpdate }
           <div className="flex items-center space-x-4">
             <div className="flex items-center text-lg font-mono bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded">
               <ClockIcon className="w-5 h-5 mr-2" />
-              {currentMinute}'
+              {Math.floor(currentTime / 60).toString().padStart(2, '0')}:{(currentTime % 60).toString().padStart(2, '0')}
             </div>
             
             {!isLive ? (
@@ -258,7 +258,7 @@ export default function MatchLive({ matchId, homeTeam, awayTeam, onScoreUpdate }
           <button
             onClick={() => {
               setSelectedTeam('home')
-              setEventMinute(currentMinute)
+              setEventMinute(Math.floor(currentTime / 60))
               setShowGoalModal(true)
             }}
             className="flex items-center px-4 py-2 bg-kopri-blue text-white rounded-lg hover:bg-kopri-blue/90"
@@ -270,7 +270,7 @@ export default function MatchLive({ matchId, homeTeam, awayTeam, onScoreUpdate }
           <button
             onClick={() => {
               setSelectedTeam('away')
-              setEventMinute(currentMinute)
+              setEventMinute(Math.floor(currentTime / 60))
               setShowGoalModal(true)
             }}
             className="flex items-center px-4 py-2 bg-kopri-blue text-white rounded-lg hover:bg-kopri-blue/90"

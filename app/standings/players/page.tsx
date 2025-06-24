@@ -48,8 +48,7 @@ export default function PlayersStandingsPage() {
         .from('match_events')
         .select(`
           type,
-          player_id,
-          players!inner(id, name, teams!inner(name))
+          player_id
         `)
 
       if (eventsError) {
@@ -59,21 +58,46 @@ export default function PlayersStandingsPage() {
         return
       }
 
+      // 선수 정보 별도로 가져오기
+      const { data: playersData, error: playersError } = await supabase
+        .from('players')
+        .select(`
+          id,
+          name,
+          teams!inner(name)
+        `)
+
+      if (playersError) {
+        console.warn('Players data not available:', playersError)
+        setPlayerStats([])
+        setLoading(false)
+        return
+      }
+
+      // 선수 정보를 Map으로 변환
+      const playersMap: { [key: string]: { name: string; teamName: string } } = {}
+      playersData?.forEach(player => {
+        const teamData = Array.isArray(player.teams) ? player.teams[0] : (player.teams as any)
+        playersMap[player.id] = {
+          name: player.name,
+          teamName: teamData?.name || '알 수 없음'
+        }
+      })
+
       // 선수별 통계 집계
       const playerStatsMap: { [key: string]: PlayerStats } = {}
 
       eventsData?.forEach(event => {
         const playerId = event.player_id
-        const playerData = Array.isArray(event.players) ? event.players[0] : event.players
-        const playerName = playerData?.name || '알 수 없음'
-        const teamData = Array.isArray(playerData?.teams) ? playerData?.teams[0] : (playerData as any)?.teams
-        const teamName = teamData?.name || '알 수 없음'
+        const playerInfo = playersMap[playerId]
+        
+        if (!playerInfo) return // 선수 정보가 없으면 스킵
 
         if (!playerStatsMap[playerId]) {
           playerStatsMap[playerId] = {
             player_id: playerId,
-            player_name: playerName,
-            team_name: teamName,
+            player_name: playerInfo.name,
+            team_name: playerInfo.teamName,
             goals: 0,
             assists: 0,
             attack_points: 0,
@@ -187,9 +211,18 @@ export default function PlayersStandingsPage() {
       <div className="max-w-6xl mx-auto">
         {/* 헤더 */}
         <div className="mb-8">
-          <div className="flex items-center mb-4">
-            <UserIcon className="w-8 h-8 text-kopri-blue dark:text-kopri-lightblue mr-3" />
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">개인 순위</h1>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center">
+              <UserIcon className="w-8 h-8 text-kopri-blue dark:text-kopri-lightblue mr-3" />
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">개인 순위</h1>
+            </div>
+            <button
+              onClick={loadPlayerStats}
+              disabled={loading}
+              className="flex items-center px-4 py-2 bg-kopri-blue text-white rounded-lg hover:bg-kopri-blue/90 disabled:opacity-50"
+            >
+              🔄 새로고침
+            </button>
           </div>
           <p className="text-gray-600 dark:text-gray-300">
             선수별 득점 및 어시스트 통계 (골 1점, 어시스트 1점)
