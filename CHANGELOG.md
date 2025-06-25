@@ -149,7 +149,7 @@ FcKopri - KOPRI CUP 축구 리그 관리 시스템의 개발 히스토리입니�
 
 ---
 
-### 2024.06.22 - Advanced Features
+### 2024.06.23 - Advanced Features
 
 #### 🎯 **경기 예측 시스템**
 - **예측 기능**: 사용자별 경기 스코어 예측
@@ -183,7 +183,7 @@ FcKopri - KOPRI CUP 축구 리그 관리 시스템의 개발 히스토리입니�
 
 ---
 
-### 2024.06.21 - Core System Implementation
+### 2024.06.23 - Core System Implementation
 
 #### ⚽ **실시간 경기 진행**
 - **MatchLive 컴포넌트**: 진행 중인 경기의 실시간 관리
@@ -210,7 +210,7 @@ FcKopri - KOPRI CUP 축구 리그 관리 시스템의 개발 히스토리입니�
 
 ---
 
-### 2024.06.20 - Foundation & Basic Features
+### 2024.06.23 - Foundation & Basic Features
 
 #### 🏠 **기본 시스템 구축**
 - **Next.js 14 프로젝트**: App Router 기반 최신 아키텍처
