@@ -10,13 +10,29 @@ import {
   PencilIcon, 
   PlusIcon, 
   UserIcon,
-  TrashIcon 
+  TrashIcon,
+  CalendarIcon,
+  ClockIcon
 } from '@heroicons/react/24/outline'
 import { AdminOnly } from '@/components/AdminRoute'
 import SearchInput from '@/components/SearchInput'
 import FilterDropdown from '@/components/FilterDropdown'
 import TeamPhotos from '@/components/TeamPhotos'
 import CommentSection from '@/components/CommentSection'
+import { format } from 'date-fns'
+import { ko } from 'date-fns/locale'
+
+interface Match {
+  id: string
+  home_team_id: string | null
+  away_team_id: string | null
+  match_date: string | null
+  home_score: number | null
+  away_score: number | null
+  status: string
+  home_team: { id: string; name: string } | null
+  away_team: { id: string; name: string } | null
+}
 
 export default function TeamDetailPage() {
   const params = useParams()
@@ -26,6 +42,7 @@ export default function TeamDetailPage() {
   const [team, setTeam] = useState<Team | null>(null)
   const [players, setPlayers] = useState<Player[]>([])
   const [filteredPlayers, setFilteredPlayers] = useState<Player[]>([])
+  const [matches, setMatches] = useState<Match[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [departmentFilter, setDepartmentFilter] = useState('')
@@ -55,6 +72,20 @@ export default function TeamDetailPage() {
         const playersArray = playersData || []
         setPlayers(playersArray)
         setFilteredPlayers(playersArray)
+
+        // 팀의 경기 정보 가져오기
+        const { data: matchesData, error: matchesError } = await supabase
+          .from('matches')
+          .select(`
+            *,
+            home_team:teams!matches_home_team_id_fkey(id, name),
+            away_team:teams!matches_away_team_id_fkey(id, name)
+          `)
+          .or(`home_team_id.eq.${teamId},away_team_id.eq.${teamId}`)
+          .order('match_date', { ascending: true })
+
+        if (matchesError) throw matchesError
+        setMatches(matchesData || [])
       } catch (error) {
         console.error('Error fetching team data:', error)
         router.push('/teams')
@@ -434,6 +465,146 @@ export default function TeamDetailPage() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* 경기 일정 및 결과 */}
+        {matches.length > 0 && (
+          <div className="mt-8 bg-white rounded-lg shadow">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">경기 일정 및 결과</h3>
+              <p className="text-gray-600">총 {matches.length}경기</p>
+            </div>
+            <div className="p-6">
+              <div className="space-y-4">
+                {matches.map((match) => {
+                  const isHomeTeam = match.home_team_id === teamId
+                  const teamScore = isHomeTeam ? match.home_score : match.away_score
+                  const opponentScore = isHomeTeam ? match.away_score : match.home_score
+                  const opponent = isHomeTeam ? match.away_team : match.home_team
+                  
+                  return (
+                    <Link
+                      key={match.id}
+                      href={`/matches/${match.id}`}
+                      className="block p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-2">
+                            {match.status === 'completed' && (
+                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                teamScore !== null && opponentScore !== null
+                                  ? teamScore > opponentScore
+                                    ? 'bg-green-100 text-green-800'
+                                    : teamScore < opponentScore
+                                    ? 'bg-red-100 text-red-800'
+                                    : 'bg-yellow-100 text-yellow-800'
+                                  : 'bg-gray-100 text-gray-800'
+                              }`}>
+                                {teamScore !== null && opponentScore !== null
+                                  ? teamScore > opponentScore
+                                    ? '승'
+                                    : teamScore < opponentScore
+                                    ? '패'
+                                    : '무'
+                                  : '-'
+                                }
+                              </span>
+                            )}
+                            {match.status === 'scheduled' && (
+                              <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                                예정
+                              </span>
+                            )}
+                            {match.status === 'in_progress' && (
+                              <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+                                진행중
+                              </span>
+                            )}
+                            <span className="text-sm text-gray-600 dark:text-gray-400">
+                              {isHomeTeam ? '홈' : '원정'}
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <span className="font-medium text-gray-900 dark:text-gray-100">
+                              vs {opponent?.name || '미정'}
+                            </span>
+                            {match.status === 'completed' && teamScore !== null && opponentScore !== null && (
+                              <span className="text-lg font-bold text-kopri-blue dark:text-kopri-lightblue">
+                                {teamScore} - {opponentScore}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          {match.match_date && (
+                            <div className="text-sm text-gray-600 dark:text-gray-400">
+                              <div className="flex items-center justify-end mb-1">
+                                <CalendarIcon className="w-4 h-4 mr-1" />
+                                {format(new Date(match.match_date), 'M월 d일 (EEE)', { locale: ko })}
+                              </div>
+                              <div className="flex items-center justify-end">
+                                <ClockIcon className="w-4 h-4 mr-1" />
+                                {format(new Date(match.match_date), 'HH:mm')}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+
+              {/* 경기 통계 요약 */}
+              <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-kopri-blue dark:text-kopri-lightblue">
+                      {matches.filter(m => m.status === 'completed').length}
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">경기</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600">
+                      {matches.filter(m => {
+                        if (m.status !== 'completed') return false
+                        const isHome = m.home_team_id === teamId
+                        const teamScore = isHome ? m.home_score : m.away_score
+                        const oppScore = isHome ? m.away_score : m.home_score
+                        return teamScore !== null && oppScore !== null && teamScore > oppScore
+                      }).length}
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">승</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-yellow-600">
+                      {matches.filter(m => {
+                        if (m.status !== 'completed') return false
+                        const isHome = m.home_team_id === teamId
+                        const teamScore = isHome ? m.home_score : m.away_score
+                        const oppScore = isHome ? m.away_score : m.home_score
+                        return teamScore !== null && oppScore !== null && teamScore === oppScore
+                      }).length}
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">무</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-red-600">
+                      {matches.filter(m => {
+                        if (m.status !== 'completed') return false
+                        const isHome = m.home_team_id === teamId
+                        const teamScore = isHome ? m.home_score : m.away_score
+                        const oppScore = isHome ? m.away_score : m.home_score
+                        return teamScore !== null && oppScore !== null && teamScore < oppScore
+                      }).length}
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">패</div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 

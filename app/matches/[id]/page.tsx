@@ -248,7 +248,13 @@ export default function MatchDetailPage() {
             {/* 홈팀 */}
             <div className="text-center flex-1">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                {match.home_team?.name || '미정'}
+                {match.home_team ? (
+                  <Link href={`/teams/${match.home_team.id}`} className="hover:text-kopri-blue transition-colors">
+                    {match.home_team.name}
+                  </Link>
+                ) : (
+                  '미정'
+                )}
               </h2>
               {match.status === 'completed' && (
                 <div className="text-6xl font-bold text-kopri-blue">
@@ -287,7 +293,13 @@ export default function MatchDetailPage() {
             {/* 원정팀 */}
             <div className="text-center flex-1">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                {match.away_team?.name || '미정'}
+                {match.away_team ? (
+                  <Link href={`/teams/${match.away_team.id}`} className="hover:text-kopri-blue transition-colors">
+                    {match.away_team.name}
+                  </Link>
+                ) : (
+                  '미정'
+                )}
               </h2>
               {match.status === 'completed' && (
                 <div className="text-6xl font-bold text-kopri-blue">
