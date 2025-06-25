@@ -123,9 +123,10 @@ export default function StatsPage() {
           stats.points += 3
         } else if (match.home_score! === match.away_score!) {
           stats.draws++
-          stats.points += 1
+          stats.points += 2
         } else {
           stats.losses++
+          stats.points += 1
         }
       })
 
@@ -141,9 +142,10 @@ export default function StatsPage() {
           stats.points += 3
         } else if (match.away_score! === match.home_score!) {
           stats.draws++
-          stats.points += 1
+          stats.points += 2
         } else {
           stats.losses++
+          stats.points += 1
         }
       })
 

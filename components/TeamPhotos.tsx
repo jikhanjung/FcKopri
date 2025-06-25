@@ -255,16 +255,14 @@ export default function TeamPhotos({ teamId, teamName }: TeamPhotosProps) {
             </h3>
           </div>
 
-          {/* 업로드 버튼 (관리자만) */}
-          {isAdmin && (
-            <button
-              onClick={() => setShowUploadForm(true)}
-              className="flex items-center px-3 py-2 bg-kopri-blue text-white rounded-lg hover:bg-kopri-blue/90 transition-colors"
-            >
-              <PlusIcon className="w-4 h-4 mr-2" />
-              사진 추가
-            </button>
-          )}
+          {/* 업로드 버튼 (모든 사용자) */}
+          <button
+            onClick={() => setShowUploadForm(true)}
+            className="flex items-center px-3 py-2 bg-kopri-blue text-white rounded-lg hover:bg-kopri-blue/90 transition-colors"
+          >
+            <PlusIcon className="w-4 h-4 mr-2" />
+            사진 추가
+          </button>
         </div>
 
         {/* 필터 버튼 */}
@@ -307,14 +305,12 @@ export default function TeamPhotos({ teamId, teamName }: TeamPhotosProps) {
                 : `${getPhotoTypeInfo(activeFilter as TeamPhoto['photo_type']).label} 사진이 없습니다`
               }
             </p>
-            {isAdmin && (
-              <button
-                onClick={() => setShowUploadForm(true)}
-                className="mt-4 text-kopri-blue hover:text-kopri-blue/80 font-medium"
-              >
-                첫 번째 사진을 업로드해보세요
-              </button>
-            )}
+            <button
+              onClick={() => setShowUploadForm(true)}
+              className="mt-4 text-kopri-blue hover:text-kopri-blue/80 font-medium"
+            >
+              첫 번째 사진을 업로드해보세요
+            </button>
           </div>
         ) : (
           /* 사진 그리드 */

@@ -61,9 +61,10 @@ export async function calculateStandings(): Promise<TeamStanding[]> {
           stats.points += 3
         } else if (match.home_score! === match.away_score!) {
           stats.drawn++
-          stats.points += 1
+          stats.points += 2
         } else {
           stats.lost++
+          stats.points += 1
         }
       })
 
@@ -79,9 +80,10 @@ export async function calculateStandings(): Promise<TeamStanding[]> {
           stats.points += 3
         } else if (match.away_score! === match.home_score!) {
           stats.drawn++
-          stats.points += 1
+          stats.points += 2
         } else {
           stats.lost++
+          stats.points += 1
         }
       })
 

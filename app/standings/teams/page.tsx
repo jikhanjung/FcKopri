@@ -72,9 +72,10 @@ export default function TeamsStandingsPage() {
               stats.points += 3
             } else if (match.home_score! === match.away_score!) {
               stats.drawn++
-              stats.points += 1
+              stats.points += 2
             } else {
               stats.lost++
+              stats.points += 1
             }
           })
 
@@ -90,9 +91,10 @@ export default function TeamsStandingsPage() {
               stats.points += 3
             } else if (match.away_score! === match.home_score!) {
               stats.drawn++
-              stats.points += 1
+              stats.points += 2
             } else {
               stats.lost++
+              stats.points += 1
             }
           })
 
@@ -408,7 +410,7 @@ export default function TeamsStandingsPage() {
         <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
           <h3 className="text-sm font-medium text-blue-900 dark:text-blue-200 mb-2">📋 순위 결정 기준</h3>
           <ol className="text-sm text-blue-800 dark:text-blue-300 space-y-1 list-decimal list-inside">
-            <li>승점 (승리 3점, 무승부 1점, 패배 0점)</li>
+            <li>승점 (승리 3점, 무승부 2점, 패배 1점)</li>
             <li>득실차 (득점 - 실점)</li>
             <li>다득점</li>
           </ol>
