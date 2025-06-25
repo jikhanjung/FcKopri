@@ -53,7 +53,7 @@ export default function Home() {
             {competition?.name || '제 1회 KOPRI CUP'}
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300">
-            {competition?.description || '한국극지연구소 축구 대회'}
+            {competition?.description || '한국극지연구소 풋살 대회'}
           </p>
           {competition && (
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">

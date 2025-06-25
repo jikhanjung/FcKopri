@@ -314,39 +314,110 @@ export default function PlayersStandingsPage() {
 
             {/* 테이블 바디 */}
             <div className="divide-y divide-gray-200 dark:divide-gray-700">
-              {playerStats.map((player, index) => (
-                <div
-                  key={player.player_id}
-                  className={`px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
-                    index < 3 ? 'bg-yellow-50 dark:bg-yellow-900/20' : ''
-                  }`}
-                >
-                  <div className="grid grid-cols-8 gap-4 items-center">
-                    {/* 순위 */}
-                    <div className="col-span-1">
-                      <div className="flex items-center">
-                        {index < 3 && (
-                          <TrophyIcon
-                            className={`w-5 h-5 mr-2 ${
-                              index === 0
-                                ? 'text-yellow-500'
-                                : index === 1
-                                ? 'text-gray-400'
-                                : 'text-orange-400'
-                            }`}
-                          />
-                        )}
-                        <span className={`text-lg font-bold ${
-                          index < 3 ? 'text-kopri-blue dark:text-kopri-lightblue' : 'text-gray-900 dark:text-gray-100'
-                        }`}>
-                          {index + 1}
-                        </span>
-                      </div>
-                    </div>
+              {playerStats.map((player, index) => {
+                // 공동 순위 계산
+                let displayRank = index + 1;
+                if (index > 0) {
+                  const prevPlayer = playerStats[index - 1];
+                  const prevPrevPlayer = index > 1 ? playerStats[index - 2] : null;
+                  
+                  // 현재 정렬 기준에 따라 값 비교
+                  let currentValue, prevValue, prevPrevValue;
+                  switch (sortBy) {
+                    case 'attack_points':
+                      currentValue = player.attack_points;
+                      prevValue = prevPlayer.attack_points;
+                      prevPrevValue = prevPrevPlayer?.attack_points;
+                      break;
+                    case 'assists':
+                      currentValue = player.assists;
+                      prevValue = prevPlayer.assists;
+                      prevPrevValue = prevPrevPlayer?.assists;
+                      break;
+                    case 'average_points':
+                      currentValue = player.average_points;
+                      prevValue = prevPlayer.average_points;
+                      prevPrevValue = prevPrevPlayer?.average_points;
+                      break;
+                    case 'motm_count':
+                      currentValue = player.motm_count;
+                      prevValue = prevPlayer.motm_count;
+                      prevPrevValue = prevPrevPlayer?.motm_count;
+                      break;
+                    default: // 'goals'
+                      currentValue = player.goals;
+                      prevValue = prevPlayer.goals;
+                      prevPrevValue = prevPrevPlayer?.goals;
+                      break;
+                  }
+                  
+                  // 이전 선수와 같은 값이면 같은 순위
+                  if (currentValue === prevValue) {
+                    // 이전 선수의 실제 순위 찾기
+                    let actualPrevRank = index;
+                    for (let i = index - 1; i >= 0; i--) {
+                      const checkPlayer = playerStats[i];
+                      let checkValue;
+                      switch (sortBy) {
+                        case 'attack_points':
+                          checkValue = checkPlayer.attack_points;
+                          break;
+                        case 'assists':
+                          checkValue = checkPlayer.assists;
+                          break;
+                        case 'average_points':
+                          checkValue = checkPlayer.average_points;
+                          break;
+                        case 'motm_count':
+                          checkValue = checkPlayer.motm_count;
+                          break;
+                        default:
+                          checkValue = checkPlayer.goals;
+                          break;
+                      }
+                      if (checkValue === currentValue) {
+                        actualPrevRank = i + 1;
+                      } else {
+                        break;
+                      }
+                    }
+                    displayRank = actualPrevRank;
+                  }
+                }
 
-                    {/* 선수명 (팀) */}
-                    <div className="col-span-2">
-                      <div className="font-semibold text-gray-900 dark:text-gray-100">
+                return (
+                  <div
+                    key={player.player_id}
+                    className={`px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
+                      displayRank <= 3 ? 'bg-yellow-50 dark:bg-yellow-900/20' : ''
+                    }`}
+                  >
+                    <div className="grid grid-cols-8 gap-4 items-center">
+                      {/* 순위 */}
+                      <div className="col-span-1">
+                        <div className="flex items-center">
+                          {displayRank <= 3 && (
+                            <TrophyIcon
+                              className={`w-5 h-5 mr-2 ${
+                                displayRank === 1
+                                  ? 'text-yellow-500'
+                                  : displayRank === 2
+                                  ? 'text-gray-400'
+                                  : 'text-orange-400'
+                              }`}
+                            />
+                          )}
+                          <span className={`text-lg font-bold ${
+                            displayRank <= 3 ? 'text-kopri-blue dark:text-kopri-lightblue' : 'text-gray-900 dark:text-gray-100'
+                          }`}>
+                            {displayRank}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* 선수명 (팀) */}
+                      <div className="col-span-2">
+                        <div className="font-semibold text-gray-900 dark:text-gray-100">
                         <Link 
                           href={`/players/${player.player_id}`}
                           className="hover:text-kopri-blue dark:hover:text-kopri-lightblue transition-colors"
@@ -356,32 +427,32 @@ export default function PlayersStandingsPage() {
                       </div>
                       <div className="text-sm text-gray-600 dark:text-gray-400">
                         {player.team_name}
+                        </div>
                       </div>
-                    </div>
 
-                    {/* 득점 */}
-                    <div className="col-span-1 text-center">
+                      {/* 득점 */}
+                      <div className="col-span-1 text-center">
                       <span className="text-lg font-bold text-green-600 dark:text-green-400">
                         {player.goals}
                       </span>
-                    </div>
+                      </div>
 
-                    {/* 어시스트 */}
-                    <div className="col-span-1 text-center">
+                      {/* 어시스트 */}
+                      <div className="col-span-1 text-center">
                       <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
                         {player.assists}
                       </span>
-                    </div>
+                      </div>
 
-                    {/* 공격포인트 */}
-                    <div className="col-span-1 text-center">
+                      {/* 공격포인트 */}
+                      <div className="col-span-1 text-center">
                       <span className="text-lg font-bold text-kopri-blue dark:text-kopri-lightblue">
                         {player.attack_points}
                       </span>
-                    </div>
+                      </div>
 
-                    {/* MOTM 횟수 */}
-                    <div className="col-span-1 text-center">
+                      {/* MOTM 횟수 */}
+                      <div className="col-span-1 text-center">
                       <div className="flex items-center justify-center">
                         <span className={`text-lg font-bold ${
                           player.motm_count > 0 ? 'text-yellow-500' : 'text-gray-400'
@@ -394,20 +465,21 @@ export default function PlayersStandingsPage() {
                           </span>
                         )}
                       </div>
-                    </div>
+                      </div>
 
-                    {/* 경기당 평균 */}
-                    <div className="col-span-1 text-center">
+                      {/* 경기당 평균 */}
+                      <div className="col-span-1 text-center">
                       <span className="text-sm text-gray-600 dark:text-gray-400">
                         {player.average_points.toFixed(1)}
                       </span>
                       <div className="text-xs text-gray-500 dark:text-gray-500">
                         ({player.matches_played}경기)
                       </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         )}
