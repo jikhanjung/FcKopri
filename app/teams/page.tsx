@@ -20,6 +20,7 @@ export default function TeamsPage() {
         const { data, error } = await supabase
           .from('teams')
           .select('*')
+          .neq('is_hidden', true)
           .order('created_at', { ascending: true })
 
         if (error) throw error

@@ -77,7 +77,7 @@ export default function StatsPage() {
 
   async function calculateTeamStats(): Promise<TeamStats[]> {
     const [teamsResult, matchesResult] = await Promise.all([
-      supabase.from('teams').select('id, name'),
+      supabase.from('teams').select('id, name').neq('is_hidden', true),
       supabase
         .from('matches')
         .select('home_team_id, away_team_id, home_score, away_score')

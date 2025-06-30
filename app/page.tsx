@@ -28,7 +28,7 @@ export default function Home() {
 
         // 통계 데이터 가져오기
         const [teamsResult, matchesResult, completedResult] = await Promise.all([
-          supabase.from('teams').select('id', { count: 'exact' }),
+          supabase.from('teams').select('id', { count: 'exact' }).neq('is_hidden', true),
           supabase.from('matches').select('id', { count: 'exact' }),
           supabase.from('matches').select('id', { count: 'exact' }).eq('status', 'completed')
         ])

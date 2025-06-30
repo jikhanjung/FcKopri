@@ -18,6 +18,7 @@ import { AdminOnly } from '@/components/AdminRoute'
 import SearchInput from '@/components/SearchInput'
 import FilterDropdown from '@/components/FilterDropdown'
 import TeamPhotos from '@/components/TeamPhotos'
+import { movePlayerToUnassignedTeam } from '@/lib/unassigned-team-utils'
 import CommentSection from '@/components/CommentSection'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
@@ -129,15 +130,15 @@ export default function TeamDetailPage() {
   const positions = Array.from(new Set(players.map(p => p.position).filter(Boolean))) as string[]
 
   async function deletePlayer(playerId: string) {
-    if (!confirm('정말로 이 선수를 삭제하시겠습니까?')) return
+    if (!confirm('정말로 이 선수를 팀에서 제외하시겠습니까?\n\n선수는 삭제되지 않고 무소속 팀으로 이동됩니다.')) return
 
     try {
-      const { error } = await supabase
-        .from('players')
-        .delete()
-        .eq('id', playerId)
-
-      if (error) throw error
+      const success = await movePlayerToUnassignedTeam(playerId)
+      
+      if (!success) {
+        alert('선수 이동 중 오류가 발생했습니다. 관리자에게 문의하세요.')
+        return
+      }
 
       const updatedPlayers = players.filter(player => player.id !== playerId)
       setPlayers(updatedPlayers)
@@ -147,9 +148,11 @@ export default function TeamDetailPage() {
         const matchesPosition = !positionFilter || player.position === positionFilter
         return matchesSearch && matchesDepartment && matchesPosition
       }))
+
+      alert('선수가 무소속 팀으로 이동되었습니다.')
     } catch (error) {
-      console.error('Error deleting player:', error)
-      alert('선수 삭제 중 오류가 발생했습니다.')
+      console.error('Error moving player to unassigned team:', error)
+      alert('선수 이동 중 오류가 발생했습니다.')
     }
   }
 
@@ -331,7 +334,8 @@ export default function TeamDetailPage() {
                           </Link>
                           <button
                             onClick={() => deletePlayer(player.id)}
-                            className="p-3 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-full"
+                            className="p-3 text-orange-600 hover:text-orange-800 hover:bg-orange-50 rounded-full"
+                            title="팀에서 제외 (무소속 팀으로 이동)"
                           >
                             <TrashIcon className="w-5 h-5" />
                           </button>
@@ -402,7 +406,8 @@ export default function TeamDetailPage() {
                             </Link>
                             <button
                               onClick={() => deletePlayer(player.id)}
-                              className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-full"
+                              className="p-2 text-orange-600 hover:text-orange-800 hover:bg-orange-50 rounded-full"
+                              title="팀에서 제외 (무소속 팀으로 이동)"
                             >
                               <TrashIcon className="w-5 h-5" />
                             </button>

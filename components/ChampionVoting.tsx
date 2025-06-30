@@ -79,6 +79,7 @@ export default function ChampionVoting() {
       const { data: teamsData, error: teamsError } = await supabase
         .from('teams')
         .select('*')
+        .neq('is_hidden', true)
         .order('name')
 
       if (teamsError) throw teamsError

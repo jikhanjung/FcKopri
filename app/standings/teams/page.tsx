@@ -30,7 +30,7 @@ export default function TeamsStandingsPage() {
       try {
         // 모든 팀과 완료된 경기 가져오기
         const [teamsResult, matchesResult] = await Promise.all([
-          supabase.from('teams').select('id, name'),
+          supabase.from('teams').select('id, name').neq('is_hidden', true),
           supabase
             .from('matches')
             .select('home_team_id, away_team_id, home_score, away_score')

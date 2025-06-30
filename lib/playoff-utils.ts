@@ -17,7 +17,7 @@ export async function calculateStandings(): Promise<TeamStanding[]> {
   try {
     // 모든 팀과 완료된 리그 경기 가져오기 (플레이오프 제외)
     const [teamsResult, matchesResult] = await Promise.all([
-      supabase.from('teams').select('id, name'),
+      supabase.from('teams').select('id, name').neq('is_hidden', true),
       supabase
         .from('matches')
         .select('home_team_id, away_team_id, home_score, away_score')
@@ -108,7 +108,7 @@ export async function calculateStandings(): Promise<TeamStanding[]> {
 export async function isLeagueCompleted(): Promise<boolean> {
   try {
     // 리그전 경기 수를 확인 (팀이 4개면 총 6경기)
-    const { data: teams } = await supabase.from('teams').select('id')
+    const { data: teams } = await supabase.from('teams').select('id').neq('is_hidden', true)
     const teamCount = teams?.length || 0
     const expectedLeagueMatches = (teamCount * (teamCount - 1)) / 2
 

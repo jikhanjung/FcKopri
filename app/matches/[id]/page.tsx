@@ -31,6 +31,11 @@ interface Player {
   team_id: string
 }
 
+interface Team {
+  id: string
+  name: string
+}
+
 interface MatchDetail {
   id: string
   home_team_id: string | null
@@ -57,15 +62,30 @@ export default function MatchDetailPage() {
   const [match, setMatch] = useState<MatchDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [editMode, setEditMode] = useState(false)
+  const [teams, setTeams] = useState<Team[]>([])
   const [formData, setFormData] = useState({
     home_score: '',
     away_score: '',
-    status: 'scheduled'
+    status: 'scheduled',
+    match_date: '',
+    home_team_id: '',
+    away_team_id: ''
   })
 
   useEffect(() => {
-    async function fetchMatch() {
+    async function fetchData() {
       try {
+        // 팀 목록 가져오기
+        const { data: teamsData, error: teamsError } = await supabase
+          .from('teams')
+          .select('id, name')
+          .neq('is_hidden', true)
+          .order('name')
+
+        if (teamsError) throw teamsError
+        setTeams(teamsData || [])
+
+        // 경기 정보 가져오기
         const { data, error } = await supabase
           .from('matches')
           .select(`
@@ -82,10 +102,13 @@ export default function MatchDetailPage() {
         setFormData({
           home_score: data.home_score?.toString() || '',
           away_score: data.away_score?.toString() || '',
-          status: data.status
+          status: data.status,
+          match_date: data.match_date ? format(new Date(data.match_date), "yyyy-MM-dd'T'HH:mm") : '',
+          home_team_id: data.home_team_id || '',
+          away_team_id: data.away_team_id || ''
         })
       } catch (error) {
-        console.error('Error fetching match:', error)
+        console.error('Error fetching data:', error)
         router.push('/matches')
       } finally {
         setLoading(false)
@@ -93,7 +116,7 @@ export default function MatchDetailPage() {
     }
 
     if (matchId) {
-      fetchMatch()
+      fetchData()
     }
   }, [matchId, router])
 
@@ -112,6 +135,19 @@ export default function MatchDetailPage() {
       if (formData.away_score !== '') {
         updates.away_score = parseInt(formData.away_score)
       }
+      
+      // 날짜가 입력된 경우에만 업데이트
+      if (formData.match_date !== '') {
+        updates.match_date = new Date(formData.match_date).toISOString()
+      }
+      
+      // 팀이 선택된 경우에만 업데이트
+      if (formData.home_team_id !== '') {
+        updates.home_team_id = formData.home_team_id
+      }
+      if (formData.away_team_id !== '') {
+        updates.away_team_id = formData.away_team_id
+      }
 
       const { error } = await supabase
         .from('matches')
@@ -120,11 +156,28 @@ export default function MatchDetailPage() {
 
       if (error) throw error
 
-      // 상태 업데이트
-      setMatch({
-        ...match,
-        ...updates
-      })
+      // 팀 정보가 변경된 경우 전체 데이터 다시 불러오기
+      if (updates.home_team_id || updates.away_team_id) {
+        const { data: updatedMatch, error: fetchError } = await supabase
+          .from('matches')
+          .select(`
+            *,
+            home_team:teams!matches_home_team_id_fkey(id, name, players(id, name, team_id)),
+            away_team:teams!matches_away_team_id_fkey(id, name, players(id, name, team_id))
+          `)
+          .eq('id', matchId)
+          .single()
+
+        if (fetchError) throw fetchError
+        setMatch(updatedMatch)
+      } else {
+        // 팀 정보가 변경되지 않은 경우 기존 방식대로 업데이트
+        setMatch({
+          ...match,
+          ...updates
+        })
+      }
+      
       setEditMode(false)
       
       // 경기가 완료된 경우 플레이오프 업데이트 확인
@@ -330,19 +383,64 @@ export default function MatchDetailPage() {
 
           {editMode && (
             <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                경기 상태
-              </label>
-              <select
-                value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full max-w-xs px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-kopri-blue dark:bg-gray-700 dark:text-gray-100"
-              >
-                <option value="scheduled">예정</option>
-                <option value="in_progress">진행중</option>
-                <option value="completed">완료</option>
-                <option value="cancelled">취소</option>
-              </select>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    홈팀
+                  </label>
+                  <select
+                    value={formData.home_team_id}
+                    onChange={(e) => setFormData({ ...formData, home_team_id: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-kopri-blue dark:bg-gray-700 dark:text-gray-100"
+                  >
+                    <option value="">팀 선택</option>
+                    {teams.map(team => (
+                      <option key={team.id} value={team.id}>{team.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    원정팀
+                  </label>
+                  <select
+                    value={formData.away_team_id}
+                    onChange={(e) => setFormData({ ...formData, away_team_id: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-kopri-blue dark:bg-gray-700 dark:text-gray-100"
+                  >
+                    <option value="">팀 선택</option>
+                    {teams.map(team => (
+                      <option key={team.id} value={team.id}>{team.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    경기 상태
+                  </label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-kopri-blue dark:bg-gray-700 dark:text-gray-100"
+                  >
+                    <option value="scheduled">예정</option>
+                    <option value="in_progress">진행중</option>
+                    <option value="completed">완료</option>
+                    <option value="cancelled">취소</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    경기 날짜 및 시간
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={formData.match_date}
+                    onChange={(e) => setFormData({ ...formData, match_date: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-kopri-blue dark:bg-gray-700 dark:text-gray-100"
+                  />
+                </div>
+              </div>
             </div>
           )}
         </div>

@@ -12,7 +12,7 @@ export async function exportAllData(): Promise<ExportData> {
   try {
     const [teamsResult, playersResult, matchesResult, matchEventsResult] = await Promise.all([
       // 팀 데이터
-      supabase.from('teams').select('*').order('name'),
+      supabase.from('teams').select('*').neq('is_hidden', true).order('name'),
       
       // 선수 데이터
       supabase.from('players').select('*, team:teams(name)').order('name'),

@@ -13,6 +13,7 @@ export interface Team {
   competition_id?: string
   name: string
   logo_url?: string
+  is_hidden?: boolean
   created_at: string
 }
 

@@ -40,6 +40,7 @@ export default function GlobalSearch() {
         const { data: teams } = await supabase
           .from('teams')
           .select('id, name')
+          .neq('is_hidden', true)
           .ilike('name', `%${searchTerm}%`)
           .limit(5)
 

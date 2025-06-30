@@ -15,7 +15,8 @@ import {
   XMarkIcon,
   ChevronDownIcon,
   ArrowDownTrayIcon,
-  PresentationChartBarIcon
+  PresentationChartBarIcon,
+  CogIcon
 } from '@heroicons/react/24/outline'
 import { useAuth } from '@/contexts/AuthContext'
 import GlobalSearch from './GlobalSearch'
@@ -157,6 +158,13 @@ export default function Navigation() {
               {isAdmin ? (
                 <div className="flex items-center space-x-4">
                   <Link
+                    href="/admin/competition"
+                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex items-center"
+                    title="대회 설정"
+                  >
+                    <CogIcon className="w-5 h-5" />
+                  </Link>
+                  <Link
                     href="/admin/export"
                     className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex items-center"
                     title="데이터 내보내기"
@@ -289,17 +297,39 @@ export default function Navigation() {
             {/* 모바일 어드민 버튼 */}
             <div className="border-t border-gray-200 dark:border-gray-700 pt-2">
               {isAdmin ? (
-                <div className="flex items-center justify-between pl-3 pr-4 py-3">
-                  <span className="text-sm text-gray-600 dark:text-gray-300 bg-green-100 dark:bg-green-800 px-3 py-1 rounded">
-                    관리자 모드
-                  </span>
-                  <button
-                    onClick={logout}
-                    className="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-full flex items-center"
+                <div>
+                  <div className="flex items-center justify-between pl-3 pr-4 py-3">
+                    <span className="text-sm text-gray-600 dark:text-gray-300 bg-green-100 dark:bg-green-800 px-3 py-1 rounded">
+                      관리자 모드
+                    </span>
+                    <button
+                      onClick={logout}
+                      className="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-full flex items-center"
+                    >
+                      <LockOpenIcon className="w-5 h-5 mr-2" />
+                      로그아웃
+                    </button>
+                  </div>
+                  <Link
+                    href="/admin/competition"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-gray-100 block pl-3 pr-4 py-3 border-l-4 border-transparent text-base font-medium"
                   >
-                    <LockOpenIcon className="w-5 h-5 mr-2" />
-                    로그아웃
-                  </button>
+                    <div className="flex items-center">
+                      <CogIcon className="w-6 h-6 mr-3" />
+                      대회 설정
+                    </div>
+                  </Link>
+                  <Link
+                    href="/admin/export"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-gray-100 block pl-3 pr-4 py-3 border-l-4 border-transparent text-base font-medium"
+                  >
+                    <div className="flex items-center">
+                      <ArrowDownTrayIcon className="w-6 h-6 mr-3" />
+                      데이터 내보내기
+                    </div>
+                  </Link>
                 </div>
               ) : (
                 <Link

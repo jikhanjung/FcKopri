@@ -7,6 +7,7 @@ import { Team } from '@/types'
 import Link from 'next/link'
 import { ArrowLeftIcon, TrashIcon } from '@heroicons/react/24/outline'
 import AdminRoute from '@/components/AdminRoute'
+import { moveTeamPlayersToUnassignedTeam } from '@/lib/unassigned-team-utils'
 
 export default function EditTeamPage() {
   const params = useParams()
@@ -79,7 +80,7 @@ export default function EditTeamPage() {
   async function handleDelete() {
     if (!team) return
 
-    const confirmMessage = `"${team.name}" 팀을 정말로 삭제하시겠습니까?\n\n⚠️ 이 작업은 되돌릴 수 없으며, 다음 데이터가 모두 삭제됩니다:\n- 팀 정보\n- 소속 선수들\n- 관련된 모든 경기\n\n계속하려면 팀 이름을 입력해주세요.`
+    const confirmMessage = `"${team.name}" 팀을 정말로 삭제하시겠습니까?\n\n⚠️ 이 작업은 되돌릴 수 없으며, 다음과 같이 처리됩니다:\n- 팀 정보 삭제\n- 소속 선수들은 무소속 팀으로 이동\n- 관련된 모든 경기 삭제\n\n계속하려면 팀 이름을 입력해주세요.`
     
     const userInput = prompt(confirmMessage)
     if (userInput !== team.name) {
@@ -91,7 +92,15 @@ export default function EditTeamPage() {
 
     setDeleteLoading(true)
     try {
-      // 팀 삭제 (CASCADE로 인해 선수와 경기도 자동 삭제)
+      // 먼저 팀 소속 선수들을 무소속 팀으로 이동
+      const playersMovedSuccessfully = await moveTeamPlayersToUnassignedTeam(teamId)
+      
+      if (!playersMovedSuccessfully) {
+        alert('선수 이동 중 오류가 발생했습니다. 관리자에게 문의하세요.')
+        return
+      }
+
+      // 팀 삭제 (경기는 CASCADE로 자동 삭제)
       const { error } = await supabase
         .from('teams')
         .delete()
@@ -99,7 +108,7 @@ export default function EditTeamPage() {
 
       if (error) throw error
 
-      alert('팀이 성공적으로 삭제되었습니다.')
+      alert('팀이 성공적으로 삭제되었습니다.\n소속 선수들은 무소속 팀으로 이동되었습니다.')
       router.push('/teams')
     } catch (error: any) {
       console.error('Error deleting team:', error)
@@ -232,12 +241,12 @@ export default function EditTeamPage() {
                 <div className="flex-1">
                   <h4 className="text-sm font-medium text-gray-900 mb-1">팀 삭제</h4>
                   <p className="text-sm text-gray-600 mb-4">
-                    팀을 삭제하면 소속 선수들과 관련된 모든 경기 데이터가 함께 삭제됩니다. 
+                    팀을 삭제하면 소속 선수들은 무소속 팀으로 이동되고, 관련된 모든 경기 데이터가 삭제됩니다. 
                     이 작업은 되돌릴 수 없습니다.
                   </p>
                   <div className="text-xs text-red-600 space-y-1">
                     <p>• 팀 정보 삭제</p>
-                    <p>• 소속 선수 {team ? '모두' : ''} 삭제</p>
+                    <p>• 소속 선수들 무소속 팀으로 이동</p>
                     <p>• 관련된 모든 경기 삭제</p>
                   </div>
                 </div>
