@@ -98,6 +98,9 @@ export default function MatchScoreEvents({
 
   const getEventIcon = (type: string, description?: string) => {
     if (type === 'goal') {
+      if (description === '자책골') {
+        return '🥅' // 자책골 아이콘
+      }
       return '⚽' // 축구공 아이콘
     }
     if (type === 'card') {
@@ -138,35 +141,75 @@ export default function MatchScoreEvents({
       {events.map((event) => (
         <div 
           key={event.id} 
-          className={`text-sm text-gray-600 dark:text-gray-400 ${isHome ? '' : 'flex justify-end'}`}
+          className={`text-sm text-gray-600 dark:text-gray-400`}
         >
-          <div className={`flex items-center space-x-1 ${isHome ? '' : 'flex-row-reverse space-x-reverse'}`}>
-            <span className="font-medium">{event.minute}'</span>
-            <span>{getEventIcon(event.type, event.description)}</span>
-            <Link 
-              href={`/players/${event.player_id}`}
-              className="font-medium text-gray-900 dark:text-gray-100 hover:text-kopri-blue dark:hover:text-kopri-lightblue transition-colors"
-            >
-              {event.player?.name}
-            </Link>
-            {event.type === 'goal' && event.assist_player && (
-              <>
-                <span>({getAssistIcon()}</span>
-                <Link 
-                  href={`/players/${event.assist_player_id}`}
-                  className="font-medium text-gray-700 dark:text-gray-300 hover:text-kopri-blue dark:hover:text-kopri-lightblue transition-colors"
-                >
-                  {event.assist_player.name}
-                </Link>
-                <span>)</span>
-              </>
-            )}
-            {event.type === 'card' && (
-              <span className="text-xs text-gray-500 dark:text-gray-500">
-                {getEventText(event.type, event.description)}
-              </span>
-            )}
-          </div>
+          {isHome ? (
+            // 홈팀: 왼쪽 정렬, 정상 순서
+            <div className="flex items-center space-x-1">
+              <span className="font-medium">{event.minute}'</span>
+              <span>{getEventIcon(event.type, event.description)}</span>
+              <Link 
+                href={`/players/${event.player_id}`}
+                className="font-medium text-gray-900 dark:text-gray-100 hover:text-kopri-blue dark:hover:text-kopri-lightblue transition-colors"
+              >
+                {event.player?.name}
+              </Link>
+              {event.description === '자책골' && (
+                <span className="text-xs text-orange-600 dark:text-orange-400">(OG)</span>
+              )}
+              {event.type === 'goal' && event.assist_player && (
+                <>
+                  <span>(</span>
+                  <span>{getAssistIcon()}</span>
+                  <Link 
+                    href={`/players/${event.assist_player_id}`}
+                    className="font-medium text-gray-700 dark:text-gray-300 hover:text-kopri-blue dark:hover:text-kopri-lightblue transition-colors"
+                  >
+                    {event.assist_player.name}
+                  </Link>
+                  <span>)</span>
+                </>
+              )}
+              {event.type === 'card' && (
+                <span className="text-xs text-gray-500 dark:text-gray-500">
+                  {getEventText(event.type, event.description)}
+                </span>
+              )}
+            </div>
+          ) : (
+            // 원정팀: 오른쪽 정렬, 특별한 순서
+            <div className="flex items-center justify-end space-x-1">
+              <span>{getEventIcon(event.type, event.description)}</span>
+              <Link 
+                href={`/players/${event.player_id}`}
+                className="font-medium text-gray-900 dark:text-gray-100 hover:text-kopri-blue dark:hover:text-kopri-lightblue transition-colors"
+              >
+                {event.player?.name}
+              </Link>
+              {event.description === '자책골' && (
+                <span className="text-xs text-orange-600 dark:text-orange-400">(OG)</span>
+              )}
+              {event.type === 'goal' && event.assist_player && (
+                <>
+                  <span>(</span>
+                  <span>{getAssistIcon()}</span>
+                  <Link 
+                    href={`/players/${event.assist_player_id}`}
+                    className="font-medium text-gray-700 dark:text-gray-300 hover:text-kopri-blue dark:hover:text-kopri-lightblue transition-colors"
+                  >
+                    {event.assist_player.name}
+                  </Link>
+                  <span>)</span>
+                </>
+              )}
+              <span className="font-medium">{event.minute}'</span>
+              {event.type === 'card' && (
+                <span className="text-xs text-gray-500 dark:text-gray-500">
+                  {getEventText(event.type, event.description)}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       ))}
     </div>

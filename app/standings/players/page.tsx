@@ -49,7 +49,8 @@ export default function PlayersStandingsPage() {
         .from('match_events')
         .select(`
           type,
-          player_id
+          player_id,
+          description
         `)
 
       if (eventsError) {
@@ -109,8 +110,11 @@ export default function PlayersStandingsPage() {
         }
 
         if (event.type === 'goal') {
-          playerStatsMap[playerId].goals++
-          playerStatsMap[playerId].attack_points += 1 // 골 1점
+          // 자책골은 제외
+          if (event.description !== '자책골') {
+            playerStatsMap[playerId].goals++
+            playerStatsMap[playerId].attack_points += 1 // 골 1점
+          }
         } else if (event.type === 'assist') {
           playerStatsMap[playerId].assists++
           playerStatsMap[playerId].attack_points += 1 // 어시스트 1점

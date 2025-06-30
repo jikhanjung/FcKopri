@@ -56,6 +56,7 @@ export default function MatchLive({ matchId, homeTeam, awayTeam, onScoreUpdate }
   const [selectedPlayer, setSelectedPlayer] = useState('')
   const [assistPlayer, setAssistPlayer] = useState('')
   const [eventMinute, setEventMinute] = useState(Math.floor(currentTime / 60))
+  const [isOwnGoal, setIsOwnGoal] = useState(false)
 
   useEffect(() => {
     loadMatchEvents()
@@ -132,14 +133,17 @@ export default function MatchLive({ matchId, homeTeam, awayTeam, onScoreUpdate }
     if (!selectedPlayer) return
 
     try {
+      // selectedTeam은 득점하는 팀을 의미 (자책골 여부와 관계없이)
+      const scoringTeamId = selectedTeam === 'home' ? homeTeam.id : awayTeam.id
+      
       const newEvent = {
         match_id: matchId,
         type: 'goal' as const,
         player_id: selectedPlayer,
-        assist_player_id: assistPlayer || null,
-        team_id: selectedTeam === 'home' ? homeTeam.id : awayTeam.id,
+        assist_player_id: isOwnGoal ? null : (assistPlayer || null),
+        team_id: scoringTeamId,
         minute: eventMinute,
-        description: assistPlayer ? '어시스트 포함' : '단독 골'
+        description: isOwnGoal ? '자책골' : (assistPlayer ? '어시스트 포함' : '단독 골')
       }
 
       const { error } = await supabase
@@ -148,8 +152,8 @@ export default function MatchLive({ matchId, homeTeam, awayTeam, onScoreUpdate }
 
       if (error) throw error
 
-      // 어시스트가 있으면 어시스트 이벤트도 추가
-      if (assistPlayer) {
+      // 어시스트가 있으면 어시스트 이벤트도 추가 (자책골이 아닌 경우에만)
+      if (!isOwnGoal && assistPlayer) {
         const assistEvent = {
           match_id: matchId,
           type: 'assist' as const,
@@ -168,11 +172,12 @@ export default function MatchLive({ matchId, homeTeam, awayTeam, onScoreUpdate }
       setShowGoalModal(false)
       setSelectedPlayer('')
       setAssistPlayer('')
+      setIsOwnGoal(false)
       
       // 이벤트 다시 로드
       loadMatchEvents()
       
-      alert('골이 추가되었습니다!')
+      alert(isOwnGoal ? '자책골이 추가되었습니다!' : '골이 추가되었습니다!')
     } catch (error) {
       console.error('Error adding goal:', error)
       alert('골 추가 중 오류가 발생했습니다.')
@@ -264,7 +269,7 @@ export default function MatchLive({ matchId, homeTeam, awayTeam, onScoreUpdate }
             className="flex items-center px-4 py-2 bg-kopri-blue text-white rounded-lg hover:bg-kopri-blue/90"
           >
             <PlusIcon className="w-4 h-4 mr-2" />
-            {homeTeam.name} 골
+            {homeTeam.name} 득점
           </button>
           
           <button
@@ -276,7 +281,7 @@ export default function MatchLive({ matchId, homeTeam, awayTeam, onScoreUpdate }
             className="flex items-center px-4 py-2 bg-kopri-blue text-white rounded-lg hover:bg-kopri-blue/90"
           >
             <PlusIcon className="w-4 h-4 mr-2" />
-            {awayTeam.name} 골
+            {awayTeam.name} 득점
           </button>
         </div>
 
@@ -300,7 +305,7 @@ export default function MatchLive({ matchId, homeTeam, awayTeam, onScoreUpdate }
                       {event.minute}'
                     </span>
                     <span className="text-2xl">
-                      {event.type === 'goal' ? '⚽' : event.type === 'assist' ? '🅰️' : '📝'}
+                      {event.type === 'goal' ? (event.description === '자책골' ? '🥅' : '⚽') : event.type === 'assist' ? '🅰️' : '📝'}
                     </span>
                     <div>
                       <div className="font-medium text-gray-900 dark:text-gray-100">
@@ -309,6 +314,7 @@ export default function MatchLive({ matchId, homeTeam, awayTeam, onScoreUpdate }
                       {event.description && (
                         <div className="text-sm text-gray-600 dark:text-gray-400">
                           {event.description}
+                          {event.description === '자책골' && ' (상대팀 득점)'}
                         </div>
                       )}
                     </div>
@@ -331,7 +337,8 @@ export default function MatchLive({ matchId, homeTeam, awayTeam, onScoreUpdate }
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
               <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
-                골 추가 - {selectedTeam === 'home' ? homeTeam.name : awayTeam.name}
+                {selectedTeam === 'home' ? homeTeam.name : awayTeam.name} 득점 추가
+                {isOwnGoal && <span className="text-orange-600"> (자책골)</span>}
               </h3>
               
               <div className="space-y-4">
@@ -347,9 +354,26 @@ export default function MatchLive({ matchId, homeTeam, awayTeam, onScoreUpdate }
                   />
                 </div>
                 
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="ownGoal"
+                    checked={isOwnGoal}
+                    onChange={(e) => {
+                      setIsOwnGoal(e.target.checked)
+                      setSelectedPlayer('') // 선수 선택 초기화
+                      setAssistPlayer('') // 자책골 체크 시 어시스트 초기화
+                    }}
+                    className="mr-2 h-4 w-4 text-kopri-blue rounded focus:ring-kopri-blue"
+                  />
+                  <label htmlFor="ownGoal" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    자책골
+                  </label>
+                </div>
+                
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    득점자
+                    {isOwnGoal ? '자책골 선수' : '득점자'}
                   </label>
                   <select
                     value={selectedPlayer}
@@ -357,7 +381,10 @@ export default function MatchLive({ matchId, homeTeam, awayTeam, onScoreUpdate }
                     className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   >
                     <option value="">선택하세요</option>
-                    {(selectedTeam === 'home' ? homeTeam.players : awayTeam.players).map((player) => (
+                    {(isOwnGoal 
+                      ? (selectedTeam === 'home' ? awayTeam.players : homeTeam.players) // 자책골이면 상대팀 선수 표시
+                      : (selectedTeam === 'home' ? homeTeam.players : awayTeam.players)
+                    ).map((player) => (
                       <option key={player.id} value={player.id}>
                         {player.name}
                       </option>
@@ -365,25 +392,27 @@ export default function MatchLive({ matchId, homeTeam, awayTeam, onScoreUpdate }
                   </select>
                 </div>
                 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    어시스트 (선택사항)
-                  </label>
-                  <select
-                    value={assistPlayer}
-                    onChange={(e) => setAssistPlayer(e.target.value)}
-                    className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                  >
-                    <option value="">없음</option>
-                    {(selectedTeam === 'home' ? homeTeam.players : awayTeam.players)
-                      .filter(player => player.id !== selectedPlayer)
-                      .map((player) => (
-                        <option key={player.id} value={player.id}>
-                          {player.name}
-                        </option>
-                      ))}
-                  </select>
-                </div>
+                {!isOwnGoal && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      어시스트 (선택사항)
+                    </label>
+                    <select
+                      value={assistPlayer}
+                      onChange={(e) => setAssistPlayer(e.target.value)}
+                      className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    >
+                      <option value="">없음</option>
+                      {(selectedTeam === 'home' ? homeTeam.players : awayTeam.players)
+                        .filter(player => player.id !== selectedPlayer)
+                        .map((player) => (
+                          <option key={player.id} value={player.id}>
+                            {player.name}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                )}
               </div>
               
               <div className="flex justify-end space-x-3 mt-6">

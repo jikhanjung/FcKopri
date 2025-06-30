@@ -34,6 +34,9 @@ FcKopri는 제 1회 KOPRI CUP을 위한 완전한 축구 리그 관리 시스템
 - 경기별 다중 영상 시스템 (하이라이트, 골 장면, 전체 경기, 인터뷰, 분석 등)
 - 댓글 시스템 (경기/사진/팀별, 답글, 좋아요/싫어요)
 - 팀 네비게이션 및 경기 목록 (팀별 전적 통계)
+- 무소속 팀 시스템 (선수 데이터 보존, 숨겨진 팀 관리)
+- 종합 경기 편집 시스템 (날짜/시간, 팀, 점수, 상태)
+- 대회 설정 관리 시스템 (이름, 기간, 설명)
 
 ## 개발 명령어
 
@@ -62,7 +65,10 @@ npm run type-check
 ```
 FcKopri/
 ├── app/                     # Next.js 14 App Router
-│   ├── admin/              # 관리자 페이지 (로그인, 내보내기)
+│   ├── admin/              # 관리자 페이지
+│   │   ├── competition/    # 대회 설정 관리
+│   │   ├── export/         # 데이터 내보내기
+│   │   └── login/          # 관리자 로그인
 │   ├── api/                # API 엔드포인트 (IP 가져오기)
 │   ├── awards/             # MVP/베스트6 투표 및 시상식
 │   ├── calendar/           # 캘린더 뷰
@@ -106,6 +112,7 @@ FcKopri/
 ├── lib/                    # 유틸리티 함수
 │   ├── export-utils.ts     # 데이터 내보내기 (JSON/CSV/Excel)
 │   ├── playoff-utils.ts    # 플레이오프 로직
+│   ├── unassigned-team-utils.ts # 무소속 팀 관리 유틸리티
 │   └── supabase.ts         # Supabase 클라이언트 설정
 ├── types/                  # TypeScript 타입 정의
 │   └── index.ts            # 전체 타입 정의
@@ -119,7 +126,9 @@ FcKopri/
 │   ├── mvp_votes_table.sql
 │   ├── comments_table.sql
 │   ├── add_youtube_links.sql
-│   └── match_videos_table.sql
+│   ├── match_videos_table.sql
+│   ├── 13_add_is_hidden_to_teams.sql  # 팀 숨김 기능
+│   └── create_unassigned_team.sql     # 무소속 팀 생성
 ├── README.md               # 프로젝트 문서
 ├── FEATURES.md             # 기능 명세서
 └── CLAUDE.md               # Claude Code 가이드 (이 파일)
@@ -129,8 +138,8 @@ FcKopri/
 
 ### 핵심 테이블
 - `competitions` - 대회 정보 (KOPRI CUP)
-- `teams` - 팀 정보 (이름, 부서)
-- `players` - 선수 정보 (이름, 소속팀)
+- `teams` - 팀 정보 (이름, 부서, is_hidden으로 숨김 기능)
+- `players` - 선수 정보 (이름, 소속팀, 무소속 팀 포함)
 - `matches` - 리그 경기 (일정, 결과, 상태, MOTM)
 - `playoff_matches` - 플레이오프 경기
 
@@ -295,6 +304,7 @@ useEffect(() => {
 - "순위" 드롭다운: "팀 순위", "개인 순위", "시상식"
 - "통계" 메뉴 숨김 처리
 - 모바일 반응형 햄버거 메뉴
+- 관리자 전용 메뉴: 대회 설정, 데이터 내보내기
 
 ### 데이터 내보내기
 - JSON, CSV, Excel 형식 지원
@@ -337,6 +347,27 @@ useEffect(() => {
 - 임베드 영상 플레이어 제공
 - 관리자 영상 관리 기능
 
+### 무소속 팀 시스템
+- 선수 데이터 보존 중심 설계
+- 팀 삭제 시 선수들 무소속 팀으로 자동 이동
+- 팀에서 선수 제외 시 무소속 팀으로 이동 (삭제 대신)
+- 숨겨진 특수 팀으로 일반 사용자에게 보이지 않음
+- 자동 생성 및 관리 유틸리티 함수
+
+### 종합 경기 편집 시스템
+- 경기 날짜 및 시간 수정
+- 홈팀/원정팀 변경 (드롭다운 선택)
+- 경기 점수 및 상태 수정
+- 실시간 팀 데이터 업데이트
+- 종합적인 경기 정보 관리
+
+### 대회 관리 시스템
+- 관리자 전용 대회 설정 페이지 (`/admin/competition`)
+- 대회명, 설명, 연도 편집
+- 대회 시작일/종료일 설정
+- 대회 기간 자동 계산 표시
+- 생성/수정 시간 추적
+
 ## 배포 가이드
 
 ### Vercel 배포 (권장)
@@ -363,6 +394,8 @@ node restore-data.js
 2. `sql/` 디렉토리의 파일들을 순서대로 실행:
    - `00_initial_schema.sql` (기본 테이블)
    - `01_match_events_table.sql` ~ `12_match_videos_table.sql` (확장 테이블)
+   - `13_add_is_hidden_to_teams.sql` (팀 숨김 기능)
+   - `create_unassigned_team.sql` (무소속 팀 생성)
    - `20_storage_setup.sql` (Storage 설정)
    - `30_security_policies.sql` (보안 정책)
 3. Storage 버킷 자동 생성됨:
