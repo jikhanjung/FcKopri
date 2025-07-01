@@ -82,6 +82,7 @@ export default function TeamsPage() {
             <Link
               href="/teams/new"
               className="bg-kopri-blue text-white px-4 py-2 rounded-md hover:bg-kopri-blue/90 flex items-center ml-4"
+              data-testid="add-team-button"
             >
               <PlusIcon className="w-5 h-5 mr-2" />
               팀 추가
@@ -136,6 +137,7 @@ export default function TeamsPage() {
               <div
                 key={team.id}
                 className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow border border-gray-200 relative"
+                data-testid="team-card"
               >
                 {/* 어드민 전용 빠른 수정 버튼 */}
                 <AdminOnly>

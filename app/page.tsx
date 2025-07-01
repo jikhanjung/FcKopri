@@ -65,17 +65,17 @@ export default function Home() {
 
         {/* 통계 카드 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <Link href="/teams" className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center hover:shadow-lg transition-shadow cursor-pointer">
+          <Link href="/teams" className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center hover:shadow-lg transition-shadow cursor-pointer" data-testid="teams-stat-card">
             <UserGroupIcon className="w-12 h-12 text-kopri-blue dark:text-kopri-lightblue mx-auto mb-4" />
             <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.teams}</h3>
             <p className="text-gray-600 dark:text-gray-300">참가 팀</p>
           </Link>
-          <Link href="/matches" className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center hover:shadow-lg transition-shadow cursor-pointer">
+          <Link href="/matches" className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center hover:shadow-lg transition-shadow cursor-pointer" data-testid="matches-stat-card">
             <CalendarIcon className="w-12 h-12 text-kopri-blue dark:text-kopri-lightblue mx-auto mb-4" />
             <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.matches}</h3>
             <p className="text-gray-600 dark:text-gray-300">전체 경기</p>
           </Link>
-          <Link href="/standings" className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center hover:shadow-lg transition-shadow cursor-pointer">
+          <Link href="/standings" className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center hover:shadow-lg transition-shadow cursor-pointer" data-testid="standings-stat-card">
             <TrophyIcon className="w-12 h-12 text-kopri-blue dark:text-kopri-lightblue mx-auto mb-4" />
             <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.completedMatches}</h3>
             <p className="text-gray-600 dark:text-gray-300">완료된 경기</p>
@@ -86,7 +86,7 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           <ChampionWidget />
           
-          <Link href="/predictions" className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
+          <Link href="/predictions" className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 hover:shadow-lg transition-shadow" data-testid="predictions-widget">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-kopri-blue/10 rounded-lg flex items-center justify-center mr-4">
                 <span className="text-2xl">⚽</span>

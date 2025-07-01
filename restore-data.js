@@ -11,6 +11,9 @@ const path = require('path');
 const readline = require('readline');
 
 // Load environment variables
+// Try .env.development.local first (for local DB), then .env.local (for cloud)
+require('dotenv').config({ path: '.env.development.local' }) || 
+require('dotenv').config({ path: '.env.local' }) || 
 require('dotenv').config();
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -30,7 +33,7 @@ const tableOrder = [
   'teams',
   'players',
   'matches',
-  // 'playoff_matches', // Commented out - table doesn't exist yet
+  'playoff_matches',
   'match_events',
   'match_predictions',
   'champion_votes',
@@ -54,13 +57,26 @@ function question(query) {
 async function clearTable(tableName) {
   try {
     console.log(`🗑️  Clearing ${tableName}...`);
-    const { error } = await supabase
-      .from(tableName)
-      .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all rows
     
-    if (error) throw error;
-    console.log(`✅ Cleared ${tableName}`);
+    // First, get all records to delete them
+    const { data: records, error: selectError } = await supabase
+      .from(tableName)
+      .select('id');
+    
+    if (selectError) throw selectError;
+    
+    if (records && records.length > 0) {
+      // Delete all records
+      const { error } = await supabase
+        .from(tableName)
+        .delete()
+        .in('id', records.map(r => r.id));
+      
+      if (error) throw error;
+      console.log(`✅ Cleared ${tableName} (${records.length} records)`);
+    } else {
+      console.log(`✅ ${tableName} already empty`);
+    }
   } catch (error) {
     console.error(`❌ Error clearing ${tableName}:`, error.message);
     throw error;

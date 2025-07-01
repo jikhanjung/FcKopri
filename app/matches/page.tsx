@@ -175,6 +175,7 @@ export default function MatchesPage() {
               <Link
                 href="/matches/new"
                 className="bg-kopri-blue text-white px-4 py-2 rounded-md hover:bg-kopri-blue/90 flex items-center text-sm sm:text-base"
+                data-testid="add-match-button"
               >
                 <PlusIcon className="w-5 h-5 mr-2" />
                 경기 추가
@@ -196,6 +197,7 @@ export default function MatchesPage() {
               onChange={setStatusFilter}
               options={statusOptions}
               placeholder="모든 상태"
+              data-testid="status-filter"
             />
             <input
               type="date"
@@ -263,6 +265,7 @@ export default function MatchesPage() {
                 key={match.id}
                 href={`/matches/${match.id}`}
                 className="block bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-6 border border-gray-200"
+                data-testid="match-card"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex-1">

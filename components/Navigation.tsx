@@ -72,12 +72,12 @@ export default function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   return (
-    <nav className="bg-white dark:bg-gray-800 shadow">
+    <nav className="bg-white dark:bg-gray-800 shadow" data-testid="main-navigation">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
-              <Link href="/" className="text-2xl font-bold text-kopri-blue dark:text-kopri-lightblue">
+              <Link href="/" className="text-2xl font-bold text-kopri-blue dark:text-kopri-lightblue" data-testid="logo-link">
                 KOPRI CUP
               </Link>
             </div>
@@ -99,6 +99,7 @@ export default function Navigation() {
                       <Link
                         href={item.href}
                         className={linkClasses}
+                        data-testid={`nav-${item.name.toLowerCase()}-dropdown`}
                       >
                         <item.icon className="w-5 h-5 mr-2" />
                         {item.name}
@@ -131,6 +132,7 @@ export default function Navigation() {
                     key={item.name}
                     href={item.href}
                     className={linkClasses}
+                    data-testid={`nav-${item.name.toLowerCase()}`}
                   >
                     <item.icon className="w-5 h-5 mr-2" />
                     {item.name}
@@ -186,6 +188,7 @@ export default function Navigation() {
                 <Link
                   href="/admin/login"
                   className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex items-center"
+                  data-testid="admin-login-button"
                 >
                   <LockClosedIcon className="w-5 h-5 mr-1" />
                   <span className="hidden sm:inline">관리자</span>

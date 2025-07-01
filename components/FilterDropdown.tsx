@@ -11,6 +11,7 @@ interface FilterDropdownProps {
   options: FilterOption[]
   placeholder?: string
   className?: string
+  'data-testid'?: string
 }
 
 export default function FilterDropdown({
@@ -18,13 +19,15 @@ export default function FilterDropdown({
   onChange,
   options,
   placeholder = "전체",
-  className = ""
+  className = "",
+  'data-testid': dataTestId
 }: FilterDropdownProps) {
   return (
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
       className={`block w-full px-3 py-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-kopri-blue focus:border-transparent ${className}`}
+      data-testid={dataTestId}
     >
       <option value="">{placeholder}</option>
       {options.map((option) => (

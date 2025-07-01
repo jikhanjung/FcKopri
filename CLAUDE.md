@@ -68,6 +68,139 @@ npm run type-check
 npm run version:update
 ```
 
+## 로컬 개발 환경 설정
+
+### Supabase 로컬 개발 설정
+
+이 프로젝트는 Supabase 로컬 개발 환경을 지원합니다.
+
+#### 1. Supabase CLI 설치 및 설정
+
+```bash
+# Supabase CLI는 프로젝트에 devDependency로 설치되어 있음
+npm install
+
+# Supabase 로컬 서비스 시작
+npx supabase start
+
+# Supabase 상태 확인
+npx supabase status
+
+# Supabase 서비스 중지
+npx supabase stop
+```
+
+#### 2. 환경 변수 설정
+
+프로젝트는 두 가지 환경 변수 파일을 지원합니다:
+
+- **`.env.local`**: Supabase Cloud 연결 (프로덕션 데이터)
+- **`.env.development.local`**: 로컬 Supabase 연결 (개발용)
+
+**로컬 개발 시** (`.env.development.local`):
+```env
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+```
+
+#### 3. 환경 전환
+
+Next.js는 다음 우선순위로 환경 변수를 로드합니다:
+
+1. `.env.development.local` (개발 시 최우선)
+2. `.env.local` (Supabase Cloud)
+3. `.env.development`
+4. `.env`
+
+**환경 전환 방법:**
+```bash
+# 로컬 Supabase 사용
+mv .env.development.local.backup .env.development.local
+
+# Supabase Cloud 사용
+mv .env.development.local .env.development.local.backup
+```
+
+#### 4. 로컬 Supabase 접속 정보
+
+- **Database**: `postgresql://postgres:postgres@127.0.0.1:54322/postgres`
+- **API URL**: `http://127.0.0.1:54321`
+- **Studio**: `http://127.0.0.1:54323`
+- **Inbucket (Email)**: `http://127.0.0.1:54324`
+
+### 데이터베이스 스키마 관리
+
+#### 스키마 마이그레이션
+
+```bash
+# 데이터베이스 리셋 (마이그레이션 적용)
+npx supabase db reset
+
+# 스키마 변경사항 적용
+npx supabase db push
+
+# 클라우드에서 스키마 가져오기
+npx supabase db dump -f supabase/schema.sql
+```
+
+현재 마이그레이션 파일:
+- `supabase/migrations/20250701_cloud_schema.sql`: Supabase Cloud에서 덤프한 완전한 스키마
+
+### 데이터 백업 및 복원
+
+#### 백업 스크립트
+
+```bash
+# 데이터 백업 (현재 환경에 따라 로컬/클라우드 선택)
+node backup-data.js
+
+# 데이터 복원
+node restore-data.js
+```
+
+**환경별 백업/복원:**
+- `.env.development.local`이 **있으면** → 로컬 Supabase 사용
+- `.env.development.local`이 **없으면** → Supabase Cloud 사용
+
+#### 백업 파일 구조
+
+```
+backups/backup-YYYYMMDD-HHMMSS/
+├── complete-backup.json     # 전체 데이터
+├── schema.sql              # 데이터베이스 스키마
+├── backup-summary.json     # 백업 요약
+├── competitions.json       # 개별 테이블 데이터
+├── teams.json
+├── players.json
+└── ...
+```
+
+### Docker 배포 (참고)
+
+Docker를 사용한 배포 시 환경 변수 설정:
+
+```dockerfile
+# Dockerfile
+FROM node:18-alpine
+WORKDIR /app
+COPY . .
+RUN npm ci
+RUN npm run build
+CMD ["npm", "start"]
+```
+
+```bash
+# 런타임 환경 변수 주입 (권장)
+docker run -e NEXT_PUBLIC_SUPABASE_URL=xxx \
+           -e NEXT_PUBLIC_SUPABASE_ANON_KEY=yyy \
+           -e SUPABASE_SERVICE_ROLE_KEY=zzz \
+           myapp
+
+# 또는 env 파일 사용
+docker run --env-file .env.production myapp
+```
+
 ## 버전 관리
 
 프로젝트는 두 개의 버전 파일을 사용합니다:

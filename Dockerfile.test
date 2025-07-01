@@ -1,0 +1,16 @@
+# Playwright 테스트용 Dockerfile
+FROM mcr.microsoft.com/playwright:v1.53.2-noble
+
+WORKDIR /app
+
+# 패키지 파일 복사
+COPY package*.json ./
+
+# 의존성 설치
+RUN npm ci
+
+# 앱 소스 복사
+COPY . .
+
+# 테스트 실행
+CMD ["npm", "test"]

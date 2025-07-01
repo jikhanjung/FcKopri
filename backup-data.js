@@ -10,6 +10,9 @@ const fs = require('fs').promises;
 const path = require('path');
 
 // Load environment variables
+// Try .env.development.local first (for local DB), then .env.local (for cloud)
+require('dotenv').config({ path: '.env.development.local' }) || 
+require('dotenv').config({ path: '.env.local' }) || 
 require('dotenv').config();
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -29,7 +32,7 @@ const tables = [
   'teams',
   'players',
   'matches',
-  // 'playoff_matches', // Commented out - table doesn't exist yet
+  'playoff_matches',
   'match_events',
   'match_predictions',
   'champion_votes',
@@ -98,47 +101,29 @@ async function generateSchemaSQL() {
   const sqlDir = path.join(__dirname, 'sql');
   
   try {
-    // Read all SQL files in order
-    const sqlFiles = [
-      '00_initial_schema.sql',
-      '01_match_events_table.sql',
-      '02_match_predictions_table.sql',
-      '03_champion_votes_table.sql',
-      '04_add_man_of_the_match.sql',
-      '05_match_photos_table.sql',
-      '06_team_photos_table.sql',
-      '07_mvp_votes_table.sql',
-      '08_comments_table.sql',
-      '09_add_youtube_links.sql',
-      '10_best6_votes_table.sql',
-      '11_playoff_matches_table.sql',
-      '12_match_videos_table.sql',
-      '20_storage_setup.sql',
-      '30_security_policies.sql'
-    ];
-    
-    let schemaContent = `-- FcKopri Complete Database Schema
+    // Use the complete schema file v1.1.3
+    const completeSchemaPath = path.join(sqlDir, 'complete_schema_v1.1.3.sql');
+    try {
+      const completeSchema = fs.readFileSync(completeSchemaPath, 'utf-8');
+      console.log('   Using complete schema v1.1.3');
+      
+      // Add header with backup information
+      const schemaContent = `-- FcKopri Complete Database Schema
 -- Generated: ${new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Seoul' })} (Asia/Seoul)
 -- Database: Supabase PostgreSQL
 -- Existing tables: ${existingTables.join(', ')}
--- Includes: Tables, Indexes, Triggers, Storage, Security Policies
+-- Source: complete_schema_v1.1.3.sql
 
-`;
-    
-    for (const file of sqlFiles) {
-      const filePath = path.join(sqlDir, file);
-      try {
-        const fileContent = fs.readFileSync(filePath, 'utf-8');
-        schemaContent += `\n-- ========================================\n`;
-        schemaContent += `-- ${file}\n`;
-        schemaContent += `-- ========================================\n\n`;
-        schemaContent += fileContent + '\n';
-      } catch (error) {
-        console.warn(`⚠️  Could not read ${file}: ${error.message}`);
-      }
+${completeSchema}`;
+      
+      return schemaContent;
+    } catch (error) {
+      console.warn(`⚠️  Could not read complete schema: ${error.message}`);
+      // Return basic schema info if file not found
+      return `-- FcKopri Database Schema
+-- Generated: ${new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Seoul' })} (Asia/Seoul)
+-- Schema file not found: complete_schema_v1.1.3.sql`;
     }
-    
-    return schemaContent;
     
   } catch (error) {
     console.error('❌ Could not generate schema from sql directory');
