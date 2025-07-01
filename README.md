@@ -4,6 +4,19 @@
 
 ## 🚀 주요 기능
 
+### 🔐 사용자 인증 및 권한 관리
+- **다중 인증**: 이메일/비밀번호 + OAuth 소셜 로그인 (Google, Kakao, Naver)
+- **역할 기반 권한**: SuperAdmin (최고 관리자), CompetitionAdmin (대회 관리자), User (일반 사용자)
+- **사용자 프로필**: 닉네임, 아바타, 부서, 자기소개 관리
+- **관리자 대시보드**: 권한별 기능 접근 제어
+- **세션 관리**: JWT 토큰 기반 자동 갱신
+
+### 🏆 다중 대회 관리
+- **대회 목록 관리**: 여러 대회 동시 운영 지원
+- **대회별 설정**: 독립적인 대회 정보 및 권한 관리
+- **권한 기반 접근**: 역할에 따른 대회 생성/수정/삭제 권한
+- **사용자 관리**: SuperAdmin 전용 역할 할당 시스템
+
 ### 📊 리그 관리
 - **팀 및 선수 관리**: 부서별 팀 구성, 선수 등록 및 관리
 - **무소속 팀 시스템**: 선수 데이터 보존 중심 설계 (삭제 대신 무소속 팀으로 이동)
@@ -49,27 +62,21 @@
 - **캘린더 뷰**: 월별 경기 일정 시각화
 - **애니메이션 없는 디자인**: 안정적인 성능과 접근성
 
-### 🔐 관리 시스템
-- **관리자 인증**: 암호 기반 인증 시스템
-- **권한 기반 접근**: 읽기/쓰기 권한 분리 (클라이언트 사이드)
-- **대회 관리**: 관리자 전용 대회 설정 페이지 (전반 시간 설정 포함)
-- **고급 경기 편집**: 모든 경기 정보 종합 관리
-- **무소속 팀 관리**: 자동 생성 및 숨겨진 팀 시스템
-- **백업 기능**: 전체 데이터 내보내기
-- **사진 업로드**: Supabase Storage 연동
-
 ## 🛠 기술 스택
 
-**현재 사용 중인 안정적인 기술 스택:**
+**최신 기술 스택으로 구성된 안정적인 시스템:**
 
 - **Frontend**: Next.js 14 (App Router), TypeScript
-- **Database**: Supabase (PostgreSQL + Realtime + Storage)
+- **Database**: Supabase (PostgreSQL + Realtime + Auth + Storage)
+- **Authentication**: Supabase Auth (이메일/비밀번호 + OAuth)
+- **Authorization**: 역할 기반 접근 제어 (RBAC)
 - **Styling**: Tailwind CSS (커스텀 kopri-blue 컬러)
-- **Authentication**: 클라이언트 사이드 암호 인증
 - **Icons**: Heroicons
 - **Date Handling**: date-fns (한국어 로케일)
 - **Charts**: 내장 차트 컴포넌트
 - **Image Handling**: Next.js Image 컴포넌트 최적화
+- **State Management**: React Context API
+- **Real-time**: Supabase Realtime subscriptions
 
 ## 📦 설치 및 실행
 
@@ -92,21 +99,43 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 ```
 
-4. **데이터베이스 설정**
-Supabase SQL Editor에서 다음 파일들을 순서대로 실행:
-- `match_events_table.sql`
-- `match_predictions_table.sql`  
-- `champion_votes_table.sql`
-- `add_man_of_the_match.sql`
-- `match_photos_table.sql`
-- `team_photos_table.sql`
-- `mvp_votes_table.sql`
-- `comments_table.sql`
-- `add_youtube_links.sql`
+**OAuth 소셜 로그인 설정 (선택사항):**
+- Supabase 대시보드 → Authentication → Providers에서 설정
+- Google: Google Cloud Console에서 OAuth 2.0 클라이언트 ID 생성
+- Kakao: Kakao Developers에서 앱 생성 후 REST API 키 사용
+- Naver: Naver Developers에서 애플리케이션 등록 후 클라이언트 ID 사용
 
-그리고 Supabase Storage에서 다음 버킷들을 생성:
+**Redirect URLs:**
+- Development: `http://localhost:3000/auth/callback`
+- Production: `https://yourdomain.com/auth/callback`
+
+4. **데이터베이스 설정**
+
+**방법 1: Supabase CLI 사용 (권장)**
+```bash
+# Supabase 로컬 개발 환경 시작
+npx supabase start
+
+# 마이그레이션 적용
+npx supabase db reset
+```
+
+**방법 2: 수동 설정**
+Supabase SQL Editor에서 다음 마이그레이션 파일들을 실행:
+- `supabase/migrations/20250702_user_profiles.sql` (사용자 프로필 시스템)
+- `supabase/migrations/20250703_user_roles_system.sql` (역할 기반 권한 시스템)
+
+**Storage 버킷 (자동 생성됨):**
 - `match-photos` (경기 사진)
 - `team-photos` (팀 사진)
+
+**초기 사용자 설정:**
+1. `/auth/login`에서 회원가입
+2. Supabase 대시보드에서 첫 사용자를 SuperAdmin으로 설정:
+```sql
+INSERT INTO user_roles (user_id, role) 
+VALUES ('your-user-id', 'superadmin');
+```
 
 5. **개발 서버 실행**
 ```bash

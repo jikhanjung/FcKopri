@@ -15,6 +15,10 @@ FcKopri는 제 1회 KOPRI CUP을 위한 완전한 축구 리그 관리 시스템
 - date-fns (날짜 처리)
 
 **핵심 기능:**
+- **사용자 인증 시스템** (이메일/비밀번호 + OAuth 소셜 로그인)
+- **역할 기반 권한 관리** (SuperAdmin, CompetitionAdmin, User)
+- **사용자 프로필 관리** (닉네임, 아바타, 부서 정보)
+- **다중 대회 관리 시스템** (대회별 독립 운영)
 - 팀 및 선수 관리 (부서별 분류)
 - 경기 일정 및 결과 관리
 - 실시간 경기 진행 (골/어시스트 입력)
@@ -41,7 +45,6 @@ FcKopri는 제 1회 KOPRI CUP을 위한 완전한 축구 리그 관리 시스템
 - 이벤트 아이콘 시스템 (축구공⚽, 골대🥅)
 - 무소속 팀 시스템 (선수 데이터 보존, 숨겨진 팀 관리)
 - 종합 경기 편집 시스템 (날짜/시간, 팀, 점수, 상태)
-- 대회 설정 관리 시스템 (이름, 기간, 설명)
 
 ## 개발 명령어
 
@@ -229,10 +232,16 @@ npm run version:update
 ```
 FcKopri/
 ├── app/                     # Next.js 14 App Router
-│   ├── admin/              # 관리자 페이지
-│   │   ├── competition/    # 대회 설정 관리
-│   │   ├── export/         # 데이터 내보내기
-│   │   └── login/          # 관리자 로그인
+│   ├── admin/              # 관리자 페이지 (역할 기반 접근 제어)
+│   │   ├── page.tsx        # 관리자 대시보드
+│   │   ├── competition/    # 개별 대회 설정 관리
+│   │   ├── competitions/   # 대회 목록 관리
+│   │   ├── users/          # 사용자 및 권한 관리 (SuperAdmin만)
+│   │   └── export/         # 데이터 내보내기
+│   ├── auth/               # 인증 관련 페이지
+│   │   ├── login/          # 로그인 페이지 (이메일/OAuth)
+│   │   ├── callback/       # OAuth 콜백 처리
+│   │   └── error/          # 인증 오류 처리
 │   ├── api/                # API 엔드포인트 (IP 가져오기)
 │   ├── awards/             # MVP/베스트6 투표 및 시상식
 │   ├── calendar/           # 캘린더 뷰
@@ -241,6 +250,7 @@ FcKopri/
 │   ├── playoffs/           # 플레이오프 토너먼트
 │   ├── predictions/        # 경기 예측
 │   ├── players/            # 선수 개인 프로필
+│   ├── profile/            # 사용자 프로필 관리
 │   ├── standings/          # 순위표
 │   │   ├── page.tsx        # 팀 순위표
 │   │   └── players/        # 개인 순위표
@@ -250,7 +260,9 @@ FcKopri/
 │   ├── layout.tsx          # 루트 레이아웃
 │   └── page.tsx            # 홈페이지
 ├── components/             # 재사용 가능한 React 컴포넌트
-│   ├── AdminRoute.tsx      # 관리자 전용 라우트 보호
+│   ├── AdminRoute.tsx      # 역할 기반 라우트 보호 컴포넌트
+│   ├── EmailLogin.tsx      # 이메일/비밀번호 로그인 컴포넌트
+│   ├── SocialLogin.tsx     # OAuth 소셜 로그인 컴포넌트
 │   ├── ChampionVoting.tsx  # 우승팀 투표 컴포넌트
 │   ├── ChampionWidget.tsx  # 홈페이지 우승 후보 위젯
 │   ├── ClientLayout.tsx    # 클라이언트 레이아웃 래퍼
@@ -270,7 +282,7 @@ FcKopri/
 │   ├── YouTubeManager.tsx  # 유튜브 영상 관리 컴포넌트
 │   └── ...
 ├── contexts/               # React Context API
-│   ├── AuthContext.tsx     # 관리자 인증 상태
+│   ├── AuthContext.tsx     # 사용자 인증 및 역할 관리 상태
 │   ├── NotificationContext.tsx # 실시간 알림
 │   └── ThemeContext.tsx    # 다크모드 테마
 ├── lib/                    # 유틸리티 함수
@@ -280,19 +292,14 @@ FcKopri/
 │   └── supabase.ts         # Supabase 클라이언트 설정
 ├── types/                  # TypeScript 타입 정의
 │   └── index.ts            # 전체 타입 정의
-├── *.sql                   # 데이터베이스 스키마 파일
-│   ├── match_events_table.sql
-│   ├── match_predictions_table.sql
-│   ├── champion_votes_table.sql
-│   ├── add_man_of_the_match.sql
-│   ├── match_photos_table.sql
-│   ├── team_photos_table.sql
-│   ├── mvp_votes_table.sql
-│   ├── comments_table.sql
-│   ├── add_youtube_links.sql
-│   ├── match_videos_table.sql
-│   ├── 13_add_is_hidden_to_teams.sql  # 팀 숨김 기능
-│   └── create_unassigned_team.sql     # 무소속 팀 생성
+├── sql/                    # 데이터베이스 스키마 파일
+│   ├── 16_user_profiles_table.sql     # 사용자 프로필 테이블
+│   └── archive/            # 레거시 SQL 파일들
+├── supabase/               # Supabase 설정 및 마이그레이션
+│   ├── migrations/         # 데이터베이스 마이그레이션
+│   │   ├── 20250702_user_profiles.sql    # 사용자 프로필 시스템
+│   │   └── 20250703_user_roles_system.sql # 역할 기반 권한 시스템
+│   └── config.toml         # Supabase 로컬 설정
 ├── README.md               # 프로젝트 문서
 ├── FEATURES.md             # 기능 명세서
 └── CLAUDE.md               # Claude Code 가이드 (이 파일)
@@ -318,24 +325,37 @@ FcKopri/
 - `comments` - 댓글 시스템 (경기/사진/팀별, 중첩 답글)
 - `comment_reactions` - 댓글 좋아요/싫어요
 
+### 사용자 및 인증 테이블
+- `auth.users` - Supabase Auth 사용자 테이블 (이메일, OAuth 정보)
+- `user_profiles` - 사용자 프로필 (닉네임, 아바타, 부서, 자기소개)
+- `user_roles` - 사용자 역할 관리 (SuperAdmin, CompetitionAdmin, User)
+
 ### 미디어 및 추가 기능 테이블
 - `match_photos` - 경기 사진 (업로드, 캡션, 타입)
 - `team_photos` - 팀 사진 (로고, 단체사진, 훈련사진, 일반사진)
 - `match_videos` - 경기별 다중 영상 (하이라이트, 골 장면, 전체 경기, 인터뷰, 분석, 기타)
 
-### Row Level Security (RLS)
-- **현재 상태**: 비활성화 (client-side 인증 사용)
-- **읽기 권한**: 모든 사용자
-- **쓰기 권한**: 클라이언트 사이드 관리자 인증 체크
-- **인증 방식**: 암호 기반 관리자 인증 (이메일 불필요)
+### Row Level Security (RLS) 및 권한 관리
+- **인증 시스템**: Supabase Auth (이메일/비밀번호 + OAuth)
+- **권한 체계**: 역할 기반 접근 제어 (RBAC)
+- **읽기 권한**: 인증된 사용자 및 익명 사용자 (공개 데이터)
+- **쓰기 권한**: 역할별 세분화된 권한 제어
+- **관리자 권한**: SuperAdmin (모든 권한), CompetitionAdmin (대회 관리 권한)
 
 ## 아키텍처 패턴
 
 ### 상태 관리
 - React Context API 사용
-- `AuthContext`: 관리자 인증 상태
+- `AuthContext`: 사용자 인증 및 역할 관리 (Supabase Auth 통합)
 - `ThemeContext`: 다크모드 테마 상태
 - `NotificationContext`: 실시간 알림 관리
+
+### 인증 및 권한 시스템
+- **Supabase Auth**: 이메일/비밀번호 + OAuth 소셜 로그인
+- **지원 OAuth 제공자**: Google, Kakao, Naver
+- **역할 기반 권한**: SuperAdmin, CompetitionAdmin, User
+- **세션 관리**: JWT 토큰 기반 자동 갱신
+- **보안**: Row Level Security (RLS) 정책 적용
 
 ### 실시간 기능
 - Supabase Realtime 구독 사용
@@ -351,17 +371,39 @@ FcKopri/
 
 ### 권한 관리
 - `AdminRoute` 컴포넌트로 관리자 페이지 보호
-- 조건부 UI 렌더링 (관리자/사용자)
+- 역할별 조건부 UI 렌더링 (SuperAdmin/CompetitionAdmin/User)
 - Supabase RLS로 데이터 접근 제어
+- `useAuth` 훅으로 현재 사용자 권한 확인
+- 세분화된 권한 체크 (`isSuperAdmin`, `isRoleAdmin`, `canCreateCompetitions` 등)
 
 ## 환경 변수
 
-Supabase 연동을 위한 필수 환경 변수:
+### 필수 환경 변수
+
+**Supabase 기본 설정:**
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
+
+**OAuth 소셜 로그인 설정 (선택사항):**
+```env
+# Google OAuth (Supabase 대시보드에서 설정)
+# Kakao OAuth (Supabase 대시보드에서 설정)  
+# Naver OAuth (Supabase 대시보드에서 설정)
+```
+
+### OAuth 설정 가이드
+
+1. **Supabase 대시보드** → Authentication → Providers에서 설정
+2. **Google**: Google Cloud Console에서 OAuth 2.0 클라이언트 ID 생성
+3. **Kakao**: Kakao Developers에서 앱 생성 후 REST API 키 사용
+4. **Naver**: Naver Developers에서 애플리케이션 등록 후 클라이언트 ID 사용
+
+**Redirect URLs 설정:**
+- Development: `http://localhost:3000/auth/callback`
+- Production: `https://yourdomain.com/auth/callback`
 
 ## 스타일링 가이드
 
@@ -543,12 +585,25 @@ useEffect(() => {
 - 실시간 팀 데이터 업데이트
 - 종합적인 경기 정보 관리
 
-### 대회 관리 시스템
-- 관리자 전용 대회 설정 페이지 (`/admin/competition`)
-- 대회명, 설명, 연도 편집
-- 대회 시작일/종료일 설정
-- 대회 기간 자동 계산 표시
-- 생성/수정 시간 추적
+### 사용자 인증 및 권한 시스템
+- **다중 인증 방식**: 이메일/비밀번호 + OAuth (Google, Kakao, Naver)
+- **역할 기반 접근 제어**: SuperAdmin, CompetitionAdmin, User
+- **사용자 프로필 관리**: 닉네임, 아바타, 부서, 자기소개 편집
+- **세션 관리**: JWT 토큰 기반 자동 갱신
+- **권한별 UI**: 역할에 따른 조건부 렌더링
+
+### 다중 대회 관리 시스템
+- **대회 목록 페이지** (`/admin/competitions`): 모든 대회 조회 및 관리
+- **개별 대회 설정** (`/admin/competition`): 특정 대회 상세 관리
+- **대회별 독립 운영**: 각 대회마다 독립적인 설정 및 권한
+- **권한 기반 접근**: SuperAdmin/CompetitionAdmin만 대회 생성/수정 가능
+- **자동 리다이렉트**: 대회가 없을 시 목록 페이지로 이동
+
+### 관리자 대시보드
+- **역할별 대시보드** (`/admin`): 권한에 따른 사용 가능 기능 표시
+- **사용자 관리** (`/admin/users`): SuperAdmin 전용 역할 할당 기능
+- **권한 정보 표시**: 현재 사용자의 권한 레벨 안내
+- **기능별 접근 제어**: 권한 없는 기능에 대한 명확한 안내
 
 ## 배포 가이드
 

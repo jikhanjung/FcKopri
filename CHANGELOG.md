@@ -4,6 +4,72 @@ FcKopri - KOPRI CUP 풋살 리그 관리 시스템의 개발 히스토리입니�
 
 ## 📋 버전 히스토리
 
+### 🚀 [v2.0.0] - 2025.07.01 - 사용자 인증 및 역할 기반 관리 시스템
+
+**✅ 완전한 사용자 인증 시스템과 역할 기반 권한 관리 도입**
+
+#### 🔐 사용자 인증 시스템
+- **다중 인증 방식**: 이메일/비밀번호 + OAuth 소셜 로그인 (Google, Kakao, Naver)
+- **Supabase Auth 통합**: JWT 토큰 기반 세션 관리
+- **인증 플로우**: 회원가입, 로그인, 로그아웃, OAuth 콜백 처리
+- **세션 관리**: 자동 토큰 갱신 및 인증 상태 유지
+- **인증 오류 처리**: 전용 오류 페이지 및 적절한 에러 메시지
+
+#### 👥 역할 기반 권한 제어 (RBAC)
+- **SuperAdmin (최고 관리자)**: 모든 기능에 대한 완전한 접근 권한
+- **CompetitionAdmin (대회 관리자)**: 대회 관련 기능 관리 권한
+- **User (일반 사용자)**: 기본 기능 사용 권한
+- **세분화된 권한 체크**: 컴포넌트별 역할 기반 조건부 렌더링
+- **AdminRoute 보호**: 권한별 라우트 접근 제어
+
+#### 🏆 다중 대회 관리 시스템
+- **대회 목록 페이지** (`/admin/competitions`): 모든 대회 조회 및 관리
+- **개별 대회 설정** (`/admin/competition`): URL 파라미터로 특정 대회 관리
+- **권한 기반 대회 생성**: SuperAdmin/CompetitionAdmin만 대회 생성 가능
+- **대회별 독립 운영**: 각 대회마다 독립적인 설정 및 데이터 관리
+- **자동 리다이렉트**: 대회가 없을 시 목록 페이지로 이동
+
+#### 👤 사용자 프로필 시스템
+- **프로필 페이지** (`/profile`): 개인 정보 수정 인터페이스
+- **닉네임 설정**: 표시 이름 커스터마이징
+- **아바타 이미지**: 프로필 사진 설정 (OAuth 연동)
+- **부서 정보**: 소속 부서 설정
+- **자기소개**: 개인 소개글 작성 기능
+
+#### 🎛️ 관리자 대시보드
+- **관리자 대시보드** (`/admin`): 권한별 사용 가능 기능 표시
+- **사용자 관리** (`/admin/users`): SuperAdmin 전용 역할 할당 시스템
+- **권한 정보 표시**: 현재 사용자의 권한 레벨 안내
+- **기능별 접근 제어**: 권한 부족 시 명확한 안내 메시지
+
+#### 🧭 네비게이션 개선
+- **사용자 드롭다운**: 사용자 이름 호버 시 프로필/관리자 링크 표시
+- **레거시 관리자 로그아웃 제거**: 새로운 사용자 기반 인증으로 대체
+- **프로필 사진 표시**: OAuth 로그인 시 사용자 아바타 네비게이션에 표시
+- **모바일 최적화**: 햄버거 메뉴에 사용자 정보 통합
+
+#### 🗄️ 데이터베이스 확장
+- **user_profiles 테이블**: 사용자 프로필 정보 저장
+- **user_roles 테이블**: 역할 기반 권한 관리
+- **Supabase Auth 통합**: auth.users 테이블과 연동
+- **마이그레이션 시스템**: 체계적인 스키마 버전 관리
+
+#### 🔧 기술적 개선사항
+- **AuthContext 완전 개편**: 역할 기반 인증 상태 관리
+- **컴포넌트 업데이트**: 모든 관리자 컴포넌트 새 권한 시스템 적용
+- **타입 안전성**: 사용자 및 권한 관련 TypeScript 타입 추가
+- **Supabase 마이그레이션**: 로컬 개발 환경 지원 강화
+
+#### 📝 문서 업데이트
+- **README.md**: 인증 시스템 및 OAuth 설정 가이드 추가
+- **CLAUDE.md**: 새로운 아키텍처 및 권한 시스템 문서화
+- **FEATURES.md**: 사용자 인증 및 권한 관리 기능 상세 설명
+
+#### 🚨 Breaking Changes
+- **레거시 관리자 시스템 제거**: 기존 암호 기반 인증 완전 삭제
+- **네비게이션 구조 변경**: 관리자 로그아웃 버튼 제거, 사용자 드롭다운으로 대체
+- **권한 체크 로직 변경**: `isAdmin`에서 `isSuperAdmin`, `isRoleAdmin`으로 분리
+
 ### 🚀 [v1.1.3] - 2025.06.30 - 자책골 시스템 및 전반/후반 관리
 
 **✅ 자책골 처리 시스템, 전반/후반 관리, 실시간 경기 진행 개선**
@@ -544,12 +610,15 @@ FcKopri - KOPRI CUP 풋살 리그 관리 시스템의 개발 히스토리입니�
 ## 🛠 기술 스택
 
 - **Frontend**: Next.js 14 (App Router), TypeScript
-- **Database**: Supabase (PostgreSQL + Realtime + Storage)
+- **Database**: Supabase (PostgreSQL + Realtime + Auth + Storage)
+- **Authentication**: Supabase Auth (이메일/비밀번호 + OAuth)
+- **Authorization**: 역할 기반 접근 제어 (RBAC)
 - **Styling**: Tailwind CSS (커스텀 kopri-blue 컬러)
-- **Authentication**: 클라이언트 사이드 암호 인증
+- **State Management**: React Context API
 - **Icons**: Heroicons
 - **Date Handling**: date-fns (한국어 로케일)
 - **Image Handling**: Next.js Image 컴포넌트 최적화
+- **Real-time**: Supabase Realtime subscriptions
 
 ## 📁 최종 프로젝트 구조
 
