@@ -15,7 +15,8 @@ import {
   PresentationChartBarIcon,
   CogIcon,
   UserIcon,
-  ShieldCheckIcon
+  ShieldCheckIcon,
+  UserPlusIcon
 } from '@heroicons/react/24/outline'
 import { useAuth } from '@/contexts/AuthContext'
 import GlobalSearch from './GlobalSearch'
@@ -77,7 +78,7 @@ export default function Navigation() {
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
               <Link href="/" className="text-2xl font-bold text-kopri-blue dark:text-kopri-lightblue" data-testid="logo-link">
-                KOPRI CUP
+                LeagueHub
               </Link>
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
@@ -210,6 +211,13 @@ export default function Navigation() {
                           >
                             <ArrowDownTrayIcon className="w-4 h-4 mr-3" />
                             데이터 내보내기
+                          </Link>
+                          <Link
+                            href="/admin/join-requests"
+                            className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          >
+                            <UserPlusIcon className="w-4 h-4 mr-3" />
+                            참여 신청 관리
                           </Link>
                           {isSuperAdmin && (
                             <Link

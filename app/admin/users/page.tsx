@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
-import { UserGroupIcon, ShieldCheckIcon } from '@heroicons/react/24/outline'
+import { UserGroupIcon, ShieldCheckIcon, CogIcon, PlusIcon } from '@heroicons/react/24/outline'
 import AdminRoute from '@/components/AdminRoute'
+import { Competition, UserCompetitionRelation } from '@/types'
 
 interface User {
   id: string
@@ -16,13 +17,17 @@ interface User {
     role: 'user' | 'moderator' | 'admin' | 'super_admin'
     expires_at: string | null
   }[]
+  competitions: UserCompetitionRelation[]
 }
 
 function AdminUsersPageContent() {
   const { isSuperAdmin, isRoleAdmin, loading: authLoading } = useAuth()
   const [users, setUsers] = useState<User[]>([])
+  const [competitions, setCompetitions] = useState<Competition[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [showCompetitionModal, setShowCompetitionModal] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !isSuperAdmin && !isRoleAdmin) {
@@ -33,6 +38,7 @@ function AdminUsersPageContent() {
 
     if (!authLoading) {
       fetchUsers()
+      fetchCompetitions()
     }
   }, [authLoading, isSuperAdmin, isRoleAdmin])
 
@@ -55,16 +61,25 @@ function AdminUsersPageContent() {
 
       if (profileError) throw profileError
 
-      // 각 사용자의 권한 조회
+      // 각 사용자의 권한 및 대회 관계 조회
       const usersWithRoles: User[] = []
       for (const profile of profiles) {
-        const { data: roles } = await supabase.rpc('get_user_roles', {
-          user_uuid: profile.id
-        })
+        // 사용자 권한 직접 조회
+        const { data: roles } = await supabase
+          .from('user_roles')
+          .select('role, expires_at')
+          .eq('user_id', profile.id)
+        
+        // 사용자의 대회 관계 조회
+        const { data: userCompetitions } = await supabase
+          .from('user_competition_relations')
+          .select('*')
+          .eq('user_id', profile.id)
         
         usersWithRoles.push({
           ...profile,
-          roles: roles || []
+          roles: roles || [],
+          competitions: userCompetitions || []
         })
       }
 
@@ -77,13 +92,69 @@ function AdminUsersPageContent() {
     }
   }
 
+  const fetchCompetitions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('competitions')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      setCompetitions(data || [])
+    } catch (error: any) {
+      console.error('대회 목록 조회 오류:', error)
+    }
+  }
+
+  const addUserToCompetition = async (userId: string, competitionId: string, role: 'participant' | 'admin' | 'moderator' = 'participant') => {
+    try {
+      const { error } = await supabase
+        .from('user_competition_relations')
+        .insert({
+          user_id: userId,
+          competition_id: competitionId,
+          role: role
+        })
+
+      if (error) throw error
+
+      await fetchUsers() // 목록 새로고침
+      alert('사용자가 대회에 추가되었습니다.')
+    } catch (error: any) {
+      console.error('대회 추가 오류:', error)
+      alert(error.message || '대회 추가에 실패했습니다.')
+    }
+  }
+
+  const removeUserFromCompetition = async (userId: string, competitionId: string) => {
+    try {
+      const { error } = await supabase
+        .from('user_competition_relations')
+        .delete()
+        .eq('user_id', userId)
+        .eq('competition_id', competitionId)
+
+      if (error) throw error
+
+      await fetchUsers() // 목록 새로고침
+      alert('사용자가 대회에서 제거되었습니다.')
+    } catch (error: any) {
+      console.error('대회 제거 오류:', error)
+      alert(error.message || '대회 제거에 실패했습니다.')
+    }
+  }
+
   const grantRole = async (userId: string, role: 'moderator' | 'admin' | 'super_admin') => {
     try {
-      const { error } = await supabase.rpc('grant_user_role', {
-        target_user_id: userId,
-        new_role: role,
-        reason: `관리자 페이지에서 ${role} 권한 부여`
-      })
+      // 직접 SQL로 권한 부여
+      const { error } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: userId,
+          role: role,
+          granted_by: null, // 관리자 페이지에서 부여
+          reason: `관리자 페이지에서 ${role} 권한 부여`
+        })
 
       if (error) throw error
 
@@ -97,11 +168,12 @@ function AdminUsersPageContent() {
 
   const revokeRole = async (userId: string, role: 'moderator' | 'admin' | 'super_admin') => {
     try {
-      const { error } = await supabase.rpc('revoke_user_role', {
-        target_user_id: userId,
-        role_to_revoke: role,
-        reason: `관리자 페이지에서 ${role} 권한 취소`
-      })
+      // 직접 SQL로 권한 취소
+      const { error } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId)
+        .eq('role', role)
 
       if (error) throw error
 
@@ -178,11 +250,14 @@ function AdminUsersPageContent() {
                   현재 권한
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  참여 대회
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   가입일
                 </th>
                 {isSuperAdmin && (
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    권한 관리
+                    관리
                   </th>
                 )}
               </tr>
@@ -232,44 +307,81 @@ function AdminUsersPageContent() {
                       )}
                     </div>
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex flex-wrap gap-1">
+                      {user.competitions.length > 0 ? (
+                        user.competitions.map((relation) => {
+                          const competition = competitions.find(c => c.id === relation.competition_id)
+                          return (
+                            <span
+                              key={relation.id}
+                              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-kopri-blue/10 text-kopri-blue dark:bg-kopri-lightblue/10 dark:text-kopri-lightblue"
+                              title={`역할: ${relation.role}`}
+                            >
+                              {competition?.name || '알 수 없는 대회'}
+                            </span>
+                          )
+                        })
+                      ) : (
+                        <span className="text-xs text-gray-400">참여 대회 없음</span>
+                      )}
+                    </div>
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {new Date(user.created_at).toLocaleDateString('ko-KR')}
                   </td>
                   {isSuperAdmin && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
-                        {!user.roles.some(r => r.role === 'moderator') && (
+                      <div className="flex flex-col space-y-2">
+                        {/* 권한 관리 */}
+                        <div className="flex space-x-2">
+                          {!user.roles.some(r => r.role === 'moderator') && (
+                            <button
+                              onClick={() => grantRole(user.id, 'moderator')}
+                              className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 text-xs"
+                            >
+                              운영자
+                            </button>
+                          )}
+                          {!user.roles.some(r => r.role === 'admin') && (
+                            <button
+                              onClick={() => grantRole(user.id, 'admin')}
+                              className="text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-300 text-xs"
+                            >
+                              관리자
+                            </button>
+                          )}
+                          {user.roles.some(r => r.role === 'moderator') && (
+                            <button
+                              onClick={() => revokeRole(user.id, 'moderator')}
+                              className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 text-xs"
+                            >
+                              운영자 취소
+                            </button>
+                          )}
+                          {user.roles.some(r => r.role === 'admin') && (
+                            <button
+                              onClick={() => revokeRole(user.id, 'admin')}
+                              className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 text-xs"
+                            >
+                              관리자 취소
+                            </button>
+                          )}
+                        </div>
+                        
+                        {/* 대회 관리 */}
+                        <div className="flex space-x-2">
                           <button
-                            onClick={() => grantRole(user.id, 'moderator')}
-                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                            onClick={() => {
+                              setSelectedUser(user)
+                              setShowCompetitionModal(true)
+                            }}
+                            className="inline-flex items-center text-kopri-blue hover:text-kopri-blue/80 dark:text-kopri-lightblue dark:hover:text-kopri-lightblue/80 text-xs"
                           >
-                            운영자
+                            <CogIcon className="w-3 h-3 mr-1" />
+                            대회 관리
                           </button>
-                        )}
-                        {!user.roles.some(r => r.role === 'admin') && (
-                          <button
-                            onClick={() => grantRole(user.id, 'admin')}
-                            className="text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-300"
-                          >
-                            관리자
-                          </button>
-                        )}
-                        {user.roles.some(r => r.role === 'moderator') && (
-                          <button
-                            onClick={() => revokeRole(user.id, 'moderator')}
-                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                          >
-                            운영자 취소
-                          </button>
-                        )}
-                        {user.roles.some(r => r.role === 'admin') && (
-                          <button
-                            onClick={() => revokeRole(user.id, 'admin')}
-                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                          >
-                            관리자 취소
-                          </button>
-                        )}
+                        </div>
                       </div>
                     </td>
                   )}
@@ -291,6 +403,113 @@ function AdminUsersPageContent() {
           </div>
         )}
       </div>
+
+      {/* 대회 관리 모달 */}
+      {showCompetitionModal && selectedUser && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800">
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                  대회 관리 - {selectedUser.display_name || selectedUser.email}
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowCompetitionModal(false)
+                    setSelectedUser(null)
+                  }}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* 현재 참여 중인 대회 */}
+              <div className="mb-6">
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  현재 참여 중인 대회
+                </h4>
+                {selectedUser.competitions.length > 0 ? (
+                  <div className="space-y-2">
+                    {selectedUser.competitions.map((relation) => {
+                      const competition = competitions.find(c => c.id === relation.competition_id)
+                      return (
+                        <div key={relation.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded">
+                          <div>
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">
+                              {competition?.name || '알 수 없는 대회'}
+                            </span>
+                            <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+                              ({relation.role})
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => removeUserFromCompetition(selectedUser.id, relation.competition_id)}
+                            className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-xs"
+                          >
+                            제거
+                          </button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">참여 중인 대회가 없습니다.</p>
+                )}
+              </div>
+
+              {/* 대회 추가 */}
+              <div>
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  대회 추가
+                </h4>
+                <div className="space-y-2">
+                  {competitions.filter(comp => 
+                    !selectedUser.competitions.some(rel => rel.competition_id === comp.id)
+                  ).map((competition) => (
+                    <div key={competition.id} className="flex items-center justify-between p-2 border border-gray-200 dark:border-gray-600 rounded">
+                      <span className="text-sm text-gray-900 dark:text-white">
+                        {competition.name}
+                      </span>
+                      <div className="flex space-x-1">
+                        <button
+                          onClick={() => addUserToCompetition(selectedUser.id, competition.id, 'participant')}
+                          className="px-2 py-1 text-xs bg-kopri-blue text-white rounded hover:bg-kopri-blue/80"
+                        >
+                          참가자
+                        </button>
+                        <button
+                          onClick={() => addUserToCompetition(selectedUser.id, competition.id, 'admin')}
+                          className="px-2 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700"
+                        >
+                          관리자
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {competitions.filter(comp => 
+                    !selectedUser.competitions.some(rel => rel.competition_id === comp.id)
+                  ).length === 0 && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">추가할 수 있는 대회가 없습니다.</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => {
+                    setShowCompetitionModal(false)
+                    setSelectedUser(null)
+                  }}
+                  className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-400 dark:hover:bg-gray-500"
+                >
+                  닫기
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

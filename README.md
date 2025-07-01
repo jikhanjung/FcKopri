@@ -1,6 +1,6 @@
-# FcKopri - KOPRI CUP 풋살 리그 관리 시스템
+# LeagueHub - 종합 축구 리그 관리 시스템
 
-제 1회 KOPRI CUP을 위한 완전한 풋살 리그 관리 웹 애플리케이션입니다.
+축구/풋살 리그를 위한 완전한 리그 관리 웹 애플리케이션입니다. 다중 리그 관리, 사용자 인증, 실시간 경기 진행 등 모든 기능을 포함합니다.
 
 ## 🚀 주요 기능
 
@@ -11,9 +11,12 @@
 - **관리자 대시보드**: 권한별 기능 접근 제어
 - **세션 관리**: JWT 토큰 기반 자동 갱신
 
-### 🏆 다중 대회 관리
+### 🏆 다중 대회 및 리그 참여 관리
 - **대회 목록 관리**: 여러 대회 동시 운영 지원
 - **대회별 설정**: 독립적인 대회 정보 및 권한 관리
+- **리그 참여 신청**: 사용자가 참여하고 싶은 리그 신청
+- **신청 승인 시스템**: 관리자의 참여 신청 검토 및 승인/거부
+- **자동 리다이렉트**: 소속 리그 없는 사용자는 리그 선택 페이지로 자동 이동
 - **권한 기반 접근**: 역할에 따른 대회 생성/수정/삭제 권한
 - **사용자 관리**: SuperAdmin 전용 역할 할당 시스템
 
@@ -116,25 +119,30 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 # Supabase 로컬 개발 환경 시작
 npx supabase start
 
-# 마이그레이션 적용
+# 마이그레이션 적용 (기본 대회 데이터 포함)
 npx supabase db reset
 ```
 
 **방법 2: 수동 설정**
-Supabase SQL Editor에서 다음 마이그레이션 파일들을 실행:
-- `supabase/migrations/20250702_user_profiles.sql` (사용자 프로필 시스템)
-- `supabase/migrations/20250703_user_roles_system.sql` (역할 기반 권한 시스템)
+Supabase SQL Editor에서 다음 마이그레이션 파일들을 순서대로 실행:
+- `0001_20250701_cloud_schema.sql` (기본 스키마)
+- `0002_20250701_user_profiles.sql` (사용자 프로필 시스템)
+- `0003_20250701_user_roles_system.sql` (역할 기반 권한 시스템)
+- `0004_20250701_user_competition_relations.sql` (사용자-대회 관계)
+- `0005_20250701_league_join_requests.sql` (리그 참여 신청)
 
 **Storage 버킷 (자동 생성됨):**
 - `match-photos` (경기 사진)
 - `team-photos` (팀 사진)
 
-**초기 사용자 설정:**
-1. `/auth/login`에서 회원가입
-2. Supabase 대시보드에서 첫 사용자를 SuperAdmin으로 설정:
-```sql
-INSERT INTO user_roles (user_id, role) 
-VALUES ('your-user-id', 'superadmin');
+**초기 SuperAdmin 계정 설정:**
+```bash
+# DB 리셋 시 자동 생성되는 SuperAdmin 계정
+# 이메일: admin@leaguehub.ai
+# 비밀번호: admin123
+
+# 또는 수동으로 생성
+node scripts/create-admin.js
 ```
 
 5. **개발 서버 실행**
@@ -188,6 +196,14 @@ npm run version:update # 버전 업데이트
 FcKopri/
 ├── app/                     # Next.js 14 App Router
 │   ├── admin/              # 관리자 페이지
+│   │   ├── competition/    # 대회 설정
+│   │   ├── competitions/   # 대회 목록
+│   │   ├── join-requests/  # 참여 신청 관리
+│   │   ├── users/          # 사용자 권한 관리
+│   │   └── export/         # 데이터 내보내기
+│   ├── auth/               # 인증 페이지
+│   │   ├── login/          # 로그인 (이메일/OAuth)
+│   │   └── callback/       # OAuth 콜백
 │   ├── api/                # API 엔드포인트 (IP 가져오기)
 │   ├── awards/             # MVP/베스트6 투표 및 시상식
 │   ├── calendar/           # 캘린더 뷰
@@ -195,13 +211,16 @@ FcKopri/
 │   ├── matches/            # 경기 관리
 │   ├── playoffs/           # 플레이오프
 │   ├── predictions/        # 경기 예측
+│   ├── select-league/      # 리그 선택 페이지
 │   ├── standings/          # 순위표
 │   │   ├── page.tsx        # 팀 순위표
 │   │   └── players/        # 개인 순위표
 │   ├── stats/              # 통계 (메뉴에서 숨김)
 │   └── teams/              # 팀 관리
 ├── components/             # 재사용 가능한 React 컴포넌트
-│   ├── AdminRoute.tsx      # 관리자 전용 라우트
+│   ├── AdminRoute.tsx      # 역할 기반 라우트 보호
+│   ├── EmailLogin.tsx      # 이메일 로그인
+│   ├── SocialLogin.tsx     # OAuth 소셜 로그인
 │   ├── ChampionVoting.tsx  # 우승팀 투표
 │   ├── CommentSection.tsx  # 댓글 시스템
 │   ├── GlobalSearch.tsx    # 전역 검색
@@ -214,8 +233,8 @@ FcKopri/
 │   ├── TeamPhotos.tsx      # 팀 사진 관리
 │   ├── YouTubeManager.tsx  # 유튜브 영상 관리
 │   └── ...
-├── contexts/               # React Context 
-│   ├── AuthContext.tsx     # 인증 상태
+├── contexts/               # React Context API
+│   ├── AuthContext.tsx     # 사용자 인증 및 역할 관리
 │   ├── NotificationContext.tsx # 실시간 알림
 │   └── ThemeContext.tsx    # 다크모드
 ├── lib/                    # 유틸리티 함수
@@ -224,19 +243,32 @@ FcKopri/
 │   ├── unassigned-team-utils.ts # 무소속 팀 관리
 │   └── supabase.ts         # 데이터베이스 연결
 ├── types/                  # TypeScript 타입 정의
-├── *.sql                   # 데이터베이스 스키마
-├── TODO2.md                # 향후 개발 로드맵
-└── FEATURES.md             # 기능 상세 명세
+├── scripts/                # 유틸리티 스크립트
+│   └── create-admin.js     # SuperAdmin 계정 생성
+├── supabase/               # Supabase 설정
+│   ├── migrations/         # DB 마이그레이션
+│   └── seed.sql            # 초기 데이터
+├── backup-data.js          # 데이터 백업 스크립트
+├── restore-data.js         # 데이터 복원 스크립트
+├── CLAUDE.md               # Claude AI 가이드
+├── FEATURES.md             # 기능 상세 명세
+└── SUPERADMIN_SETUP.md     # SuperAdmin 설정 가이드
 ```
 
 ## 🗄 데이터베이스 스키마
 
 ### 핵심 테이블
+- **competitions**: 대회 정보 (이름, 기간, 설명)
 - **teams**: 팀 정보 (이름, 부서, is_hidden으로 숨김 기능)
 - **players**: 선수 정보 (이름, 소속팀, 무소속 팀 포함)
 - **matches**: 경기 정보 (일정, 결과, 상태, MOTM)
-- **competitions**: 대회 정보 (이름, 기간, 설명)
 - **playoff_matches**: 플레이오프 경기
+
+### 사용자 및 권한
+- **user_profiles**: 사용자 프로필 (닉네임, 아바타, 부서)
+- **user_roles**: 사용자 역할 (SuperAdmin, Admin, User)
+- **user_competition_relations**: 사용자-대회 참여 관계
+- **league_join_requests**: 리그 참여 신청
 
 ### 실시간 기능
 - **match_events**: 경기 이벤트 (골, 어시스트, 시간)
@@ -255,38 +287,46 @@ FcKopri/
 - **matches**: 유튜브 링크 필드 추가 (하이라이트 영상)
 
 ### 권한 관리
-- Row Level Security (RLS) 비활성화 (클라이언트 사이드 인증 사용)
-- 읽기: 모든 사용자
-- 쓰기: 클라이언트 사이드 관리자 인증
+- **인증**: Supabase Auth (이메일/비밀번호 + OAuth)
+- **Row Level Security (RLS)**: 테이블별 보안 정책 적용
+- **역할 기반 권한**: 
+  - SuperAdmin: 모든 권한
+  - CompetitionAdmin: 대회 관리 권한
+  - User: 일반 사용자 권한
 
 ## 🎯 사용 가이드
 
 ### 관리자 기능
-1. `/admin/login`에서 암호로 로그인
-2. 팀 및 선수 등록/수정
-3. 경기 일정 생성 및 관리
-4. 실시간 경기 진행 관리 (골, 어시스트 입력)
-5. Man of the Match 선정
-6. 경기/팀 사진 업로드 및 관리
-7. 유튜브 하이라이트 영상 연동
-8. 플레이오프 브래킷 생성
-9. 댓글 관리 (삭제 권한)
-10. 데이터 내보내기 (JSON, CSV, Excel)
-11. 대회 설정 관리 (이름, 기간, 설명 편집)
-12. 종합 경기 편집 (날짜/시간, 팀, 점수, 상태)
-13. 무소속 팀 자동 관리
+1. 역할 기반 로그인 (SuperAdmin/CompetitionAdmin)
+2. **리그 참여 신청 관리** - 사용자들의 참여 신청 검토 및 승인/거부
+3. **사용자 권한 관리** - SuperAdmin 전용 역할 할당
+4. 대회 생성 및 설정 관리
+5. 팀 및 선수 등록/수정
+6. 경기 일정 생성 및 관리
+7. 실시간 경기 진행 관리 (골, 어시스트 입력)
+8. Man of the Match 선정
+9. 경기/팀 사진 업로드 및 관리
+10. 유튜브 하이라이트 영상 연동
+11. 플레이오프 브래킷 생성
+12. 댓글 관리 (삭제 권한)
+13. 데이터 내보내기 (JSON, CSV, Excel)
+14. 종합 경기 편집 (날짜/시간, 팀, 점수, 상태)
+15. 무소속 팀 자동 관리
 
 ### 사용자 기능
-1. 실시간 순위표 확인 (팀 순위 & 개인 순위)
-2. 경기 결과 예측 참여 ("경기 결과 맞히기")
-3. 우승팀 예측 참여 ("우승팀 맞히기")
-4. MVP 투표 및 베스트6 투표 참여
-5. 하이라이트 영상 시청
-6. 댓글 작성 및 좋아요/싫어요
-7. 통계 및 차트 확인
-8. 캘린더 뷰로 경기 일정 확인
-9. 경기/팀 사진 갤러리 보기
-10. 전역 검색 기능 사용
+1. **리그 참여 신청** - 소속 리그가 없을 시 자동으로 선택 페이지 이동
+2. **실시간 신청 상태 확인** - 승인/거부 상태 실시간 업데이트
+3. 사용자 프로필 관리 (닉네임, 아바타, 부서, 자기소개)
+4. 실시간 순위표 확인 (팀 순위 & 개인 순위)
+5. 경기 결과 예측 참여 ("경기 결과 맞히기")
+6. 우승팀 예측 참여 ("우승팀 맞히기")
+7. MVP 투표 및 베스트6 투표 참여
+8. 하이라이트 영상 시청
+9. 댓글 작성 및 좋아요/싫어요
+10. 통계 및 차트 확인
+11. 캘린더 뷰로 경기 일정 확인
+12. 경기/팀 사진 갤러리 보기
+13. 전역 검색 기능 사용
 
 ## 🔄 실시간 기능
 
@@ -314,6 +354,10 @@ FcKopri/
 
 ## 🌟 특별 기능
 
+- **다중 리그 관리**: 여러 리그를 동시에 운영하고 관리
+- **리그 참여 시스템**: 사용자가 원하는 리그에 신청하고 관리자가 승인
+- **완전한 인증 시스템**: 이메일/비밀번호 + OAuth 소셜 로그인
+- **역할 기반 권한**: SuperAdmin, CompetitionAdmin, User 세분화
 - **완전한 실시간 시스템**: Supabase Realtime으로 모든 데이터 즉시 동기화
 - **사진 관리 시스템**: 경기별/팀별 사진 업로드 및 갤러리
 - **Man of the Match**: 경기별 최우수 선수 선정 및 통계

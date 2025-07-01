@@ -9,12 +9,16 @@ import {
   PencilIcon,
   CalendarIcon,
   TrophyIcon,
-  DocumentTextIcon
+  DocumentTextIcon,
+  UserGroupIcon,
+  PlusIcon,
+  ShieldCheckIcon
 } from '@heroicons/react/24/outline'
 import AdminRoute, { AdminOnly } from '@/components/AdminRoute'
 import { format, parseISO } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { useAuth } from '@/contexts/AuthContext'
+import { UserCompetitionDetails } from '@/types'
 
 interface Competition {
   id: string
@@ -28,14 +32,24 @@ interface Competition {
   updated_at: string
 }
 
+interface User {
+  id: string
+  email: string
+  display_name: string | null
+  avatar_url: string | null
+}
+
 function CompetitionEditPageContent() {
   const router = useRouter()
   const { isSuperAdmin, isRoleAdmin } = useAuth()
   const canCreateCompetitions = isSuperAdmin || isRoleAdmin
   const [competition, setCompetition] = useState<Competition | null>(null)
+  const [competitionUsers, setCompetitionUsers] = useState<UserCompetitionDetails[]>([])
+  const [allUsers, setAllUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [editMode, setEditMode] = useState(false)
+  const [showUserModal, setShowUserModal] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -75,6 +89,9 @@ function CompetitionEditPageContent() {
             end_date: data.end_date || '',
             half_duration_minutes: data.half_duration_minutes?.toString() || '45'
           })
+          
+          // 대회 사용자 목록 가져오기
+          await fetchCompetitionUsers(data.id)
         } else {
           // ID가 없으면 첫 번째 대회를 가져오거나 새 대회 생성 모드
           const { data, error } = await supabase
@@ -100,6 +117,9 @@ function CompetitionEditPageContent() {
               end_date: competition.end_date || '',
               half_duration_minutes: competition.half_duration_minutes?.toString() || '45'
             })
+            
+            // 대회 사용자 목록 가져오기
+            await fetchCompetitionUsers(competition.id)
           } else {
             // 데이터가 없는 경우 새 대회 생성 모드 (권한 있는 사용자만)
             if (!canCreateCompetitions) {
@@ -129,7 +149,81 @@ function CompetitionEditPageContent() {
     }
 
     fetchCompetition()
+    fetchAllUsers()
   }, [])
+
+  const fetchCompetitionUsers = async (competitionId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_competition_details')
+        .select('*')
+        .eq('competition_id', competitionId)
+        .order('joined_at', { ascending: false })
+
+      if (error) throw error
+      setCompetitionUsers(data || [])
+    } catch (error) {
+      console.error('Error fetching competition users:', error)
+    }
+  }
+
+  const fetchAllUsers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('id, email, display_name, avatar_url')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      setAllUsers(data || [])
+    } catch (error) {
+      console.error('Error fetching all users:', error)
+    }
+  }
+
+  const addUserToCompetition = async (userId: string, role: 'participant' | 'admin' | 'moderator' = 'participant') => {
+    if (!competition) return
+
+    try {
+      const { error } = await supabase
+        .from('user_competition_relations')
+        .insert({
+          user_id: userId,
+          competition_id: competition.id,
+          role: role
+        })
+
+      if (error) throw error
+
+      await fetchCompetitionUsers(competition.id)
+      setShowUserModal(false)
+      alert('사용자가 대회에 추가되었습니다.')
+    } catch (error: any) {
+      console.error('대회 사용자 추가 오류:', error)
+      alert(error.message || '사용자 추가에 실패했습니다.')
+    }
+  }
+
+  const removeUserFromCompetition = async (userId: string) => {
+    if (!competition) return
+
+    try {
+      const { error } = await supabase
+        .from('user_competition_relations')
+        .delete()
+        .eq('user_id', userId)
+        .eq('competition_id', competition.id)
+
+      if (error) throw error
+
+      await fetchCompetitionUsers(competition.id)
+      alert('사용자가 대회에서 제거되었습니다.')
+    } catch (error: any) {
+      console.error('대회 사용자 제거 오류:', error)
+      alert(error.message || '사용자 제거에 실패했습니다.')
+    }
+  }
 
   async function handleSave() {
     // 권한 체크
@@ -471,6 +565,175 @@ function CompetitionEditPageContent() {
                     </div>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* 참여 사용자 관리 섹션 */}
+          {competition && (
+            <div className="bg-white rounded-lg shadow p-6 mt-8">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center">
+                  <UserGroupIcon className="w-6 h-6 text-kopri-blue mr-3" />
+                  <h2 className="text-xl font-semibold text-gray-900">참여 사용자 관리</h2>
+                </div>
+                <button
+                  onClick={() => setShowUserModal(true)}
+                  className="flex items-center px-4 py-2 bg-kopri-blue text-white rounded-lg hover:bg-kopri-blue/80 transition-colors"
+                >
+                  <PlusIcon className="w-4 h-4 mr-2" />
+                  사용자 추가
+                </button>
+              </div>
+
+              {/* 현재 참여자 목록 */}
+              <div className="space-y-4">
+                {competitionUsers.length > 0 ? (
+                  competitionUsers.map((userDetail) => (
+                    <div key={userDetail.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      <div className="flex items-center">
+                        {userDetail.avatar_url ? (
+                          <img
+                            src={userDetail.avatar_url}
+                            alt="프로필"
+                            className="w-10 h-10 rounded-full mr-3"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 bg-gray-300 dark:bg-gray-600 rounded-full mr-3 flex items-center justify-center">
+                            <UserGroupIcon className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+                          </div>
+                        )}
+                        <div>
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">
+                            {userDetail.display_name || '이름 없음'}
+                          </div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                            {userDetail.email}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          userDetail.competition_role === 'admin' 
+                            ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                            : userDetail.competition_role === 'moderator'
+                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                            : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+                        }`}>
+                          <ShieldCheckIcon className="w-3 h-3 mr-1" />
+                          {userDetail.competition_role === 'admin' ? '관리자' : 
+                           userDetail.competition_role === 'moderator' ? '운영자' : '참가자'}
+                        </span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {new Date(userDetail.joined_at).toLocaleDateString('ko-KR')}
+                        </span>
+                        <button
+                          onClick={() => removeUserFromCompetition(userDetail.user_id)}
+                          className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-sm"
+                        >
+                          제거
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8">
+                    <UserGroupIcon className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
+                      참여 사용자가 없습니다
+                    </h3>
+                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                      사용자를 추가하여 대회 참여자를 관리하세요.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* 사용자 추가 모달 */}
+          {showUserModal && (
+            <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+              <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800">
+                <div className="mt-3">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                      사용자 추가 - {competition?.name}
+                    </h3>
+                    <button
+                      onClick={() => setShowUserModal(false)}
+                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {allUsers.filter(user => 
+                      !competitionUsers.some(cu => cu.user_id === user.id)
+                    ).map((user) => (
+                      <div key={user.id} className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-600 rounded">
+                        <div className="flex items-center">
+                          {user.avatar_url ? (
+                            <img
+                              src={user.avatar_url}
+                              alt="프로필"
+                              className="w-8 h-8 rounded-full mr-3"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full mr-3 flex items-center justify-center">
+                              <UserGroupIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                            </div>
+                          )}
+                          <div>
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">
+                              {user.display_name || user.email}
+                            </div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              {user.email}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex space-x-1">
+                          <button
+                            onClick={() => addUserToCompetition(user.id, 'participant')}
+                            className="px-2 py-1 text-xs bg-kopri-blue text-white rounded hover:bg-kopri-blue/80"
+                          >
+                            참가자
+                          </button>
+                          <button
+                            onClick={() => addUserToCompetition(user.id, 'moderator')}
+                            className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+                          >
+                            운영자
+                          </button>
+                          <button
+                            onClick={() => addUserToCompetition(user.id, 'admin')}
+                            className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
+                          >
+                            관리자
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    {allUsers.filter(user => 
+                      !competitionUsers.some(cu => cu.user_id === user.id)
+                    ).length === 0 && (
+                      <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+                        추가할 수 있는 사용자가 없습니다.
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="mt-6 flex justify-end">
+                    <button
+                      onClick={() => setShowUserModal(false)}
+                      className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-400 dark:hover:bg-gray-500"
+                    >
+                      닫기
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           )}
