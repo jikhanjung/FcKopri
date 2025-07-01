@@ -22,6 +22,7 @@ interface Competition {
   year?: number
   start_date?: string
   end_date?: string
+  half_duration_minutes?: number
   created_at: string
   updated_at: string
 }
@@ -37,7 +38,8 @@ export default function CompetitionEditPage() {
     description: '',
     year: '',
     start_date: '',
-    end_date: ''
+    end_date: '',
+    half_duration_minutes: ''
   })
 
   useEffect(() => {
@@ -62,7 +64,8 @@ export default function CompetitionEditPage() {
           description: data.description || '',
           year: data.year?.toString() || '',
           start_date: data.start_date || '',
-          end_date: data.end_date || ''
+          end_date: data.end_date || '',
+          half_duration_minutes: data.half_duration_minutes?.toString() || '45'
         })
       } catch (error) {
         console.error('Error fetching competition:', error)
@@ -85,6 +88,7 @@ export default function CompetitionEditPage() {
         year: formData.year ? parseInt(formData.year) : null,
         start_date: formData.start_date || null,
         end_date: formData.end_date || null,
+        half_duration_minutes: formData.half_duration_minutes ? parseInt(formData.half_duration_minutes) : 45,
         updated_at: new Date().toISOString()
       }
 
@@ -119,7 +123,8 @@ export default function CompetitionEditPage() {
       description: competition.description || '',
       year: competition.year?.toString() || '',
       start_date: competition.start_date || '',
-      end_date: competition.end_date || ''
+      end_date: competition.end_date || '',
+      half_duration_minutes: competition.half_duration_minutes?.toString() || '45'
     })
     setEditMode(false)
   }
@@ -307,6 +312,27 @@ export default function CompetitionEditPage() {
                             ? format(parseISO(competition.end_date), 'yyyy년 M월 d일 (EEE)', { locale: ko })
                             : '미설정'
                           }
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        전반 시간 (분)
+                      </label>
+                      {editMode ? (
+                        <input
+                          type="number"
+                          value={formData.half_duration_minutes}
+                          onChange={(e) => setFormData({ ...formData, half_duration_minutes: e.target.value })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-kopri-blue"
+                          placeholder="45"
+                          min="1"
+                          max="45"
+                        />
+                      ) : (
+                        <div className="text-lg text-gray-900 py-2">
+                          {competition.half_duration_minutes || 45}분 (전반/후반 각각)
                         </div>
                       )}
                     </div>

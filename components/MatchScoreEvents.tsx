@@ -99,7 +99,7 @@ export default function MatchScoreEvents({
   const getEventIcon = (type: string, description?: string) => {
     if (type === 'goal') {
       if (description === '자책골') {
-        return '🥅' // 자책골 아이콘
+        return '🥅' // 자책골 아이콘 (골대)
       }
       return '⚽' // 축구공 아이콘
     }

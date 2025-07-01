@@ -85,7 +85,7 @@ export default function MatchEvents({
           team:teams!match_events_team_id_fkey(id, name)
         `)
         .eq('match_id', matchId)
-        .in('type', ['goal', 'assist'])
+        .eq('type', 'goal')
         .order('minute', { ascending: true })
 
       if (error) {
@@ -109,10 +109,10 @@ export default function MatchEvents({
     }
   }
 
-  const getEventIcon = (type: string) => {
+  const getEventIcon = (type: string, description?: string) => {
     switch (type) {
       case 'goal':
-        return <FireIcon className="w-5 h-5 text-red-500" />
+        return description === '자책골' ? <span className="text-lg">🥅</span> : <span className="text-lg">⚽</span>
       case 'assist':
         return <HandRaisedIcon className="w-5 h-5 text-blue-500" />
       default:
@@ -203,7 +203,7 @@ export default function MatchEvents({
                   <div className="flex items-start space-x-3">
                     {/* 이벤트 아이콘 */}
                     <div className="flex-shrink-0 mt-0.5">
-                      {getEventIcon(event.type)}
+                      {getEventIcon(event.type, event.description)}
                     </div>
                     
                     {/* 이벤트 내용 */}
@@ -238,9 +238,9 @@ export default function MatchEvents({
                             </div>
                           )}
                           
-                          {/* 설명 */}
-                          {event.description && (
-                            <div className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                          {/* 설명 (자책골만 표시) */}
+                          {event.description === '자책골' && (
+                            <div className="mt-1 text-sm text-orange-600 dark:text-orange-400">
                               {event.description}
                             </div>
                           )}

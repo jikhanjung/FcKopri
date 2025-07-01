@@ -33,6 +33,7 @@ interface MatchEvent {
   team_id: string
   minute: number
   description?: string
+  half?: 'first' | 'second'
   created_at: string
 }
 
@@ -57,10 +58,37 @@ export default function MatchLive({ matchId, homeTeam, awayTeam, onScoreUpdate }
   const [assistPlayer, setAssistPlayer] = useState('')
   const [eventMinute, setEventMinute] = useState(Math.floor(currentTime / 60))
   const [isOwnGoal, setIsOwnGoal] = useState(false)
+  
+  // 전반/후반 상태
+  const [currentHalf, setCurrentHalf] = useState<'first' | 'second'>('first')
+  const [halfDuration, setHalfDuration] = useState(45) // 기본값 45분
 
   useEffect(() => {
     loadMatchEvents()
+    loadCompetitionSettings()
   }, [matchId])
+
+  const loadCompetitionSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('competitions')
+        .select('half_duration_minutes')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+
+      if (error) {
+        console.warn('Could not load competition settings:', error)
+        return
+      }
+
+      if (data?.half_duration_minutes) {
+        setHalfDuration(data.half_duration_minutes)
+      }
+    } catch (error) {
+      console.warn('Error loading competition settings:', error)
+    }
+  }
 
   useEffect(() => {
     let interval: NodeJS.Timeout
@@ -102,7 +130,8 @@ export default function MatchLive({ matchId, homeTeam, awayTeam, onScoreUpdate }
 
   const startMatch = () => {
     setIsLive(true)
-    setCurrentTime(0)
+    // 전반이면 0초부터, 후반이면 전반 시간만큼 경과된 시점부터 시작
+    setCurrentTime(currentHalf === 'first' ? 0 : halfDuration * 60)
   }
 
   const pauseMatch = () => {
@@ -143,7 +172,8 @@ export default function MatchLive({ matchId, homeTeam, awayTeam, onScoreUpdate }
         assist_player_id: isOwnGoal ? null : (assistPlayer || null),
         team_id: scoringTeamId,
         minute: eventMinute,
-        description: isOwnGoal ? '자책골' : (assistPlayer ? '어시스트 포함' : '단독 골')
+        description: isOwnGoal ? '자책골' : null,
+        half: currentHalf
       }
 
       const { error } = await supabase
@@ -160,7 +190,8 @@ export default function MatchLive({ matchId, homeTeam, awayTeam, onScoreUpdate }
           player_id: assistPlayer,
           team_id: selectedTeam === 'home' ? homeTeam.id : awayTeam.id,
           minute: eventMinute,
-          description: '어시스트'
+          description: '어시스트',
+          half: currentHalf
         }
 
         await supabase
@@ -218,6 +249,40 @@ export default function MatchLive({ matchId, homeTeam, awayTeam, onScoreUpdate }
           </h3>
           
           <div className="flex items-center space-x-4">
+            {/* 전반/후반 선택 */}
+            <div className="flex bg-gray-200 dark:bg-gray-700 rounded-lg p-1">
+              <button
+                onClick={() => {
+                  setCurrentHalf('first')
+                  if (!isLive) {
+                    setCurrentTime(0)
+                  }
+                }}
+                className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                  currentHalf === 'first'
+                    ? 'bg-kopri-blue text-white'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                }`}
+              >
+                전반
+              </button>
+              <button
+                onClick={() => {
+                  setCurrentHalf('second')
+                  if (!isLive) {
+                    setCurrentTime(halfDuration * 60) // 후반 시작 시간으로 설정
+                  }
+                }}
+                className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                  currentHalf === 'second'
+                    ? 'bg-kopri-blue text-white'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                }`}
+              >
+                후반
+              </button>
+            </div>
+            
             <div className="flex items-center text-lg font-mono bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded">
               <ClockIcon className="w-5 h-5 mr-2" />
               {Math.floor(currentTime / 60).toString().padStart(2, '0')}:{(currentTime % 60).toString().padStart(2, '0')}
@@ -263,7 +328,9 @@ export default function MatchLive({ matchId, homeTeam, awayTeam, onScoreUpdate }
           <button
             onClick={() => {
               setSelectedTeam('home')
-              setEventMinute(Math.floor(currentTime / 60))
+              // 경기 진행 중이면 현재 분+1, 아니면 현재 시간의 분
+              const minute = isLive ? Math.floor(currentTime / 60) + 1 : Math.floor(currentTime / 60)
+              setEventMinute(minute)
               setShowGoalModal(true)
             }}
             className="flex items-center px-4 py-2 bg-kopri-blue text-white rounded-lg hover:bg-kopri-blue/90"
@@ -275,7 +342,9 @@ export default function MatchLive({ matchId, homeTeam, awayTeam, onScoreUpdate }
           <button
             onClick={() => {
               setSelectedTeam('away')
-              setEventMinute(Math.floor(currentTime / 60))
+              // 경기 진행 중이면 현재 분+1, 아니면 현재 시간의 분
+              const minute = isLive ? Math.floor(currentTime / 60) + 1 : Math.floor(currentTime / 60)
+              setEventMinute(minute)
               setShowGoalModal(true)
             }}
             className="flex items-center px-4 py-2 bg-kopri-blue text-white rounded-lg hover:bg-kopri-blue/90"
@@ -311,12 +380,11 @@ export default function MatchLive({ matchId, homeTeam, awayTeam, onScoreUpdate }
                       <div className="font-medium text-gray-900 dark:text-gray-100">
                         {getPlayerName(event.player_id)} ({getTeamName(event.team_id)})
                       </div>
-                      {event.description && (
-                        <div className="text-sm text-gray-600 dark:text-gray-400">
-                          {event.description}
-                          {event.description === '자책골' && ' (상대팀 득점)'}
-                        </div>
-                      )}
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        {event.half === 'first' ? '전반' : '후반'} {event.minute}'
+                        {event.description && ` - ${event.description}`}
+                        {event.description === '자책골' && ' (상대팀 득점)'}
+                      </div>
                     </div>
                   </div>
                   

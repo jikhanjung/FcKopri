@@ -24,6 +24,18 @@ function getCurrentVersion() {
   }
 }
 
+function updatePackageJson(version) {
+  const packageFile = path.join(__dirname, '..', 'package.json');
+  try {
+    const packageData = JSON.parse(fs.readFileSync(packageFile, 'utf8'));
+    packageData.version = version;
+    fs.writeFileSync(packageFile, JSON.stringify(packageData, null, 2) + '\n');
+    console.log(`✅ package.json 버전도 ${version}으로 업데이트되었습니다.`);
+  } catch (error) {
+    console.error('❌ package.json 업데이트 실패:', error);
+  }
+}
+
 function incrementVersion(version, type) {
   const parts = version.split('.').map(Number);
   
@@ -103,9 +115,10 @@ async function main() {
   
   if (confirm.toLowerCase() === 'y') {
     fs.writeFileSync(versionFile, JSON.stringify(newVersionData, null, 2));
+    updatePackageJson(newVersion);
     console.log('\n✅ 버전이 업데이트되었습니다!');
     console.log(`\n다음 단계:`);
-    console.log(`1. git add version.json`);
+    console.log(`1. git add version.json package.json`);
     console.log(`2. git commit -m "chore: Update version to ${newVersion}"`);
     console.log(`3. git tag v${newVersion}`);
     console.log(`4. git push origin main --tags`);
