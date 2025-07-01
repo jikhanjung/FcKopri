@@ -40,7 +40,8 @@ interface CommentSectionProps {
 }
 
 export default function CommentSection({ targetType, targetId, title }: CommentSectionProps) {
-  const { isAdmin } = useAuth()
+  const { isRoleAdmin, isSuperAdmin } = useAuth()
+  const isAdmin = isRoleAdmin || isSuperAdmin
   const [comments, setComments] = useState<Comment[]>([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)

@@ -1,8 +1,9 @@
 'use client'
 
 import DataExport from '@/components/DataExport'
+import AdminRoute from '@/components/AdminRoute'
 
-export default function ExportPage() {
+function ExportPageContent() {
   return (
     <div className="p-8">
       <div className="max-w-4xl mx-auto">
@@ -44,5 +45,13 @@ export default function ExportPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function ExportPage() {
+  return (
+    <AdminRoute requiredRole="admin">
+      <ExportPageContent />
+    </AdminRoute>
   )
 }

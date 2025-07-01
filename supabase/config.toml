@@ -243,6 +243,15 @@ max_frequency = "5s"
 # Use an external OAuth provider. The full list of providers are: `apple`, `azure`, `bitbucket`,
 # `discord`, `facebook`, `github`, `gitlab`, `google`, `keycloak`, `linkedin_oidc`, `notion`, `twitch`,
 # `twitter`, `slack`, `spotify`, `workos`, `zoom`.
+
+# Google OAuth 설정 (로컬 개발용)
+[auth.external.google]
+enabled = true
+client_id = "your-google-client-id.apps.googleusercontent.com"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
+# 로컬 개발에서는 nonce 체크를 건너뛰어야 함
+skip_nonce_check = true
+
 [auth.external.apple]
 enabled = false
 client_id = ""

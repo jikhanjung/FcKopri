@@ -11,9 +11,10 @@ import {
   TrophyIcon,
   DocumentTextIcon
 } from '@heroicons/react/24/outline'
-import { AdminOnly } from '@/components/AdminRoute'
+import AdminRoute, { AdminOnly } from '@/components/AdminRoute'
 import { format, parseISO } from 'date-fns'
 import { ko } from 'date-fns/locale'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface Competition {
   id: string
@@ -27,8 +28,10 @@ interface Competition {
   updated_at: string
 }
 
-export default function CompetitionEditPage() {
+function CompetitionEditPageContent() {
   const router = useRouter()
+  const { isSuperAdmin, isRoleAdmin } = useAuth()
+  const canCreateCompetitions = isSuperAdmin || isRoleAdmin
   const [competition, setCompetition] = useState<Competition | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -45,28 +48,79 @@ export default function CompetitionEditPage() {
   useEffect(() => {
     async function fetchCompetition() {
       try {
-        // 첫 번째 대회 정보 가져오기 (현재 시스템은 단일 대회만 지원)
-        const { data, error } = await supabase
-          .from('competitions')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single()
+        const urlParams = new URLSearchParams(window.location.search)
+        const competitionId = urlParams.get('id')
 
-        if (error) {
-          console.error('Error fetching competition:', error)
-          return
+        if (competitionId) {
+          // 특정 대회 ID로 조회
+          const { data, error } = await supabase
+            .from('competitions')
+            .select('*')
+            .eq('id', competitionId)
+            .single()
+
+          if (error) {
+            console.error('Error fetching competition:', error)
+            // 대회를 찾을 수 없으면 목록으로 리다이렉트
+            router.push('/admin/competitions')
+            return
+          }
+          
+          setCompetition(data)
+          setFormData({
+            name: data.name || '',
+            description: data.description || '',
+            year: data.year?.toString() || '',
+            start_date: data.start_date || '',
+            end_date: data.end_date || '',
+            half_duration_minutes: data.half_duration_minutes?.toString() || '45'
+          })
+        } else {
+          // ID가 없으면 첫 번째 대회를 가져오거나 새 대회 생성 모드
+          const { data, error } = await supabase
+            .from('competitions')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(1)
+
+          if (error) {
+            console.error('Error fetching competition:', error)
+            return
+          }
+          
+          // 데이터가 있는 경우
+          if (data && data.length > 0) {
+            const competition = data[0]
+            setCompetition(competition)
+            setFormData({
+              name: competition.name || '',
+              description: competition.description || '',
+              year: competition.year?.toString() || '',
+              start_date: competition.start_date || '',
+              end_date: competition.end_date || '',
+              half_duration_minutes: competition.half_duration_minutes?.toString() || '45'
+            })
+          } else {
+            // 데이터가 없는 경우 새 대회 생성 모드 (권한 있는 사용자만)
+            if (!canCreateCompetitions) {
+              console.log('No permission to create competitions, redirecting to competitions list')
+              router.push('/admin/competitions')
+              return
+            }
+            
+            console.log('No competitions found, entering create mode')
+            setCompetition(null)
+            setEditMode(true) // 새 대회 생성 시 바로 편집 모드
+            setFormData({
+              name: 'KOPRI CUP',
+              description: '제 1회 KOPRI CUP 축구 리그',
+              year: new Date().getFullYear().toString(),
+              start_date: '',
+              end_date: '',
+              half_duration_minutes: '45'
+            })
+          }
         }
-        
-        setCompetition(data)
-        setFormData({
-          name: data.name || '',
-          description: data.description || '',
-          year: data.year?.toString() || '',
-          start_date: data.start_date || '',
-          end_date: data.end_date || '',
-          half_duration_minutes: data.half_duration_minutes?.toString() || '45'
-        })
       } catch (error) {
         console.error('Error fetching competition:', error)
       } finally {
@@ -78,54 +132,86 @@ export default function CompetitionEditPage() {
   }, [])
 
   async function handleSave() {
-    if (!competition) return
+    // 권한 체크
+    if (!competition && !canCreateCompetitions) {
+      alert('새 대회를 생성할 권한이 없습니다.')
+      return
+    }
 
     setSaving(true)
     try {
-      const updates: any = {
+      const competitionData: any = {
         name: formData.name,
         description: formData.description || null,
         year: formData.year ? parseInt(formData.year) : null,
         start_date: formData.start_date || null,
         end_date: formData.end_date || null,
-        half_duration_minutes: formData.half_duration_minutes ? parseInt(formData.half_duration_minutes) : 45,
-        updated_at: new Date().toISOString()
+        half_duration_minutes: formData.half_duration_minutes ? parseInt(formData.half_duration_minutes) : 45
       }
 
-      const { error } = await supabase
-        .from('competitions')
-        .update(updates)
-        .eq('id', competition.id)
+      if (competition) {
+        // 기존 대회 수정
+        competitionData.updated_at = new Date().toISOString()
+        
+        const { error } = await supabase
+          .from('competitions')
+          .update(competitionData)
+          .eq('id', competition.id)
 
-      if (error) throw error
+        if (error) throw error
 
-      // 상태 업데이트
-      setCompetition({
-        ...competition,
-        ...updates
-      })
+        // 상태 업데이트
+        setCompetition({
+          ...competition,
+          ...competitionData
+        })
+        
+        alert('대회 정보가 업데이트되었습니다.')
+      } else {
+        // 새 대회 생성
+        competitionData.created_at = new Date().toISOString()
+        competitionData.updated_at = new Date().toISOString()
+
+        const { data, error } = await supabase
+          .from('competitions')
+          .insert([competitionData])
+          .select()
+          .single()
+
+        if (error) throw error
+
+        setCompetition(data)
+        alert('새 대회가 생성되었습니다.')
+        
+        // 새 대회 생성 후 해당 대회 편집 페이지로 이동
+        router.push(`/admin/competition?id=${data.id}`)
+      }
+
       setEditMode(false)
-      
-      alert('대회 정보가 업데이트되었습니다.')
     } catch (error) {
-      console.error('Error updating competition:', error)
-      alert('업데이트 중 오류가 발생했습니다.')
+      console.error('Error saving competition:', error)
+      alert('저장 중 오류가 발생했습니다.')
     } finally {
       setSaving(false)
     }
   }
 
   function handleCancel() {
-    if (!competition) return
-    
-    setFormData({
-      name: competition.name || '',
-      description: competition.description || '',
-      year: competition.year?.toString() || '',
-      start_date: competition.start_date || '',
-      end_date: competition.end_date || '',
-      half_duration_minutes: competition.half_duration_minutes?.toString() || '45'
-    })
+    if (competition) {
+      // 기존 대회가 있는 경우 원래 값으로 복원
+      setFormData({
+        name: competition.name || '',
+        description: competition.description || '',
+        year: competition.year?.toString() || '',
+        start_date: competition.start_date || '',
+        end_date: competition.end_date || '',
+        half_duration_minutes: competition.half_duration_minutes?.toString() || '45'
+      })
+    } else {
+      // 새 대회 생성 중이었다면 목록으로 돌아가기
+      router.push('/admin/competitions')
+      return
+    }
     setEditMode(false)
   }
 
@@ -153,26 +239,32 @@ export default function CompetitionEditPage() {
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center">
               <Link
-                href="/admin"
+                href="/admin/competitions"
                 className="mr-4 p-2 hover:bg-gray-100 rounded-full"
+                title="대회 목록으로 돌아가기"
               >
                 <ArrowLeftIcon className="w-5 h-5" />
               </Link>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">대회 설정</h1>
+                <h1 className="text-3xl font-bold text-gray-900">
+                  {competition ? '대회 설정' : '새 대회 생성'}
+                </h1>
                 <p className="text-gray-600 mt-2">
-                  대회 기본 정보를 관리합니다
+                  {competition 
+                    ? `${competition.name} 정보를 관리합니다`
+                    : '새로운 대회를 생성합니다'
+                  }
                 </p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              {!editMode ? (
+              {!editMode && canCreateCompetitions ? (
                 <button
                   onClick={() => setEditMode(true)}
                   className="bg-kopri-blue text-white px-6 py-2 rounded-lg hover:bg-kopri-blue/90 flex items-center"
                 >
                   <PencilIcon className="w-4 h-4 mr-2" />
-                  편집
+                  {competition ? '편집' : '생성'}
                 </button>
               ) : (
                 <div className="flex space-x-2">
@@ -181,7 +273,7 @@ export default function CompetitionEditPage() {
                     disabled={saving}
                     className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
                   >
-                    {saving ? '저장 중...' : '저장'}
+{saving ? (competition ? '수정 중...' : '생성 중...') : (competition ? '저장' : '생성')}
                   </button>
                   <button
                     onClick={handleCancel}
@@ -195,7 +287,21 @@ export default function CompetitionEditPage() {
             </div>
           </div>
 
-          {competition && (
+          {/* 권한 없음 메시지 */}
+          {!competition && !editMode && !canCreateCompetitions && (
+            <div className="bg-white rounded-lg shadow-lg p-12 text-center">
+              <TrophyIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                대회 정보에 접근할 수 없습니다
+              </h3>
+              <p className="text-gray-600 mb-6">
+                대회를 생성하거나 편집할 권한이 없습니다. SuperAdmin 또는 CompetitionAdmin 권한이 필요합니다.
+              </p>
+            </div>
+          )}
+
+          {/* 대회 정보 또는 생성 폼 */}
+          {(competition || editMode) && (
             <div className="bg-white rounded-lg shadow-lg">
               {/* 대회 정보 카드 */}
               <div className="p-8">
@@ -221,7 +327,7 @@ export default function CompetitionEditPage() {
                         />
                       ) : (
                         <div className="text-xl font-semibold text-gray-900 py-2">
-                          {competition.name}
+                          {competition?.name || formData.name}
                         </div>
                       )}
                     </div>
@@ -242,7 +348,7 @@ export default function CompetitionEditPage() {
                         />
                       ) : (
                         <div className="text-lg text-gray-900 py-2">
-                          {competition.year || '미설정'}
+                          {competition?.year || formData.year || '미설정'}
                         </div>
                       )}
                     </div>
@@ -261,7 +367,7 @@ export default function CompetitionEditPage() {
                         />
                       ) : (
                         <div className="text-gray-900 py-2 min-h-[100px]">
-                          {competition.description || '설명이 없습니다'}
+                          {competition?.description || formData.description || '설명이 없습니다'}
                         </div>
                       )}
                     </div>
@@ -287,8 +393,8 @@ export default function CompetitionEditPage() {
                         />
                       ) : (
                         <div className="text-lg text-gray-900 py-2">
-                          {competition.start_date 
-                            ? format(parseISO(competition.start_date), 'yyyy년 M월 d일 (EEE)', { locale: ko })
+                          {(competition?.start_date || formData.start_date)
+                            ? format(parseISO(competition?.start_date || formData.start_date), 'yyyy년 M월 d일 (EEE)', { locale: ko })
                             : '미설정'
                           }
                         </div>
@@ -308,8 +414,8 @@ export default function CompetitionEditPage() {
                         />
                       ) : (
                         <div className="text-lg text-gray-900 py-2">
-                          {competition.end_date 
-                            ? format(parseISO(competition.end_date), 'yyyy년 M월 d일 (EEE)', { locale: ko })
+                          {(competition?.end_date || formData.end_date)
+                            ? format(parseISO(competition?.end_date || formData.end_date), 'yyyy년 M월 d일 (EEE)', { locale: ko })
                             : '미설정'
                           }
                         </div>
@@ -332,20 +438,20 @@ export default function CompetitionEditPage() {
                         />
                       ) : (
                         <div className="text-lg text-gray-900 py-2">
-                          {competition.half_duration_minutes || 45}분 (전반/후반 각각)
+                          {competition?.half_duration_minutes || formData.half_duration_minutes || 45}분 (전반/후반 각각)
                         </div>
                       )}
                     </div>
 
                     {/* 대회 기간 표시 */}
-                    {competition.start_date && competition.end_date && (
+                    {((competition?.start_date || formData.start_date) && (competition?.end_date || formData.end_date)) && (
                       <div className="mt-6 p-4 bg-blue-50 rounded-lg">
                         <div className="flex items-center mb-2">
                           <DocumentTextIcon className="w-5 h-5 text-blue-600 mr-2" />
                           <span className="text-sm font-medium text-blue-900">대회 기간</span>
                         </div>
                         <div className="text-blue-800">
-                          {Math.ceil((new Date(competition.end_date).getTime() - new Date(competition.start_date).getTime()) / (1000 * 60 * 60 * 24) + 1)}일간
+                          {Math.ceil((new Date(competition?.end_date || formData.end_date).getTime() - new Date(competition?.start_date || formData.start_date).getTime()) / (1000 * 60 * 60 * 24) + 1)}일간
                         </div>
                       </div>
                     )}
@@ -353,21 +459,31 @@ export default function CompetitionEditPage() {
                 </div>
 
                 {/* 생성/수정 정보 */}
-                <div className="mt-8 pt-6 border-t border-gray-200">
-                  <div className="text-sm text-gray-500 space-y-1">
-                    <div>
-                      생성일: {format(new Date(competition.created_at), 'yyyy년 M월 d일 HH:mm', { locale: ko })}
-                    </div>
-                    <div>
-                      수정일: {format(new Date(competition.updated_at), 'yyyy년 M월 d일 HH:mm', { locale: ko })}
+                {competition && (
+                  <div className="mt-8 pt-6 border-t border-gray-200">
+                    <div className="text-sm text-gray-500 space-y-1">
+                      <div>
+                        생성일: {format(new Date(competition.created_at), 'yyyy년 M월 d일 HH:mm', { locale: ko })}
+                      </div>
+                      <div>
+                        수정일: {format(new Date(competition.updated_at), 'yyyy년 M월 d일 HH:mm', { locale: ko })}
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           )}
         </div>
       </div>
     </AdminOnly>
+  )
+}
+
+export default function CompetitionEditPage() {
+  return (
+    <AdminRoute requiredRole="admin">
+      <CompetitionEditPageContent />
+    </AdminRoute>
   )
 }

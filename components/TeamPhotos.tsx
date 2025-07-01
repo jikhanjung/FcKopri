@@ -41,7 +41,8 @@ const photoTypes = [
 ] as const
 
 export default function TeamPhotos({ teamId, teamName }: TeamPhotosProps) {
-  const { isAdmin } = useAuth()
+  const { isRoleAdmin, isSuperAdmin } = useAuth()
+  const isAdmin = isRoleAdmin || isSuperAdmin
   const [photos, setPhotos] = useState<TeamPhoto[]>([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)

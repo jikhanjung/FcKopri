@@ -47,7 +47,8 @@ const VIDEO_TYPES = {
 } as const
 
 export default function MultipleYouTubeManager({ matchId }: MultipleYouTubeManagerProps) {
-  const { isAdmin } = useAuth()
+  const { isRoleAdmin, isSuperAdmin } = useAuth()
+  const isAdmin = isRoleAdmin || isSuperAdmin
   const [videos, setVideos] = useState<MatchVideo[]>([])
   const [loading, setLoading] = useState(true)
   const [isAdding, setIsAdding] = useState(false)

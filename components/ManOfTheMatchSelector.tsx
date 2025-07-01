@@ -39,7 +39,8 @@ export default function ManOfTheMatchSelector({
   currentMotmId,
   onMotmChange 
 }: ManOfTheMatchSelectorProps) {
-  const { isAdmin } = useAuth()
+  const { isRoleAdmin, isSuperAdmin } = useAuth()
+  const isAdmin = isRoleAdmin || isSuperAdmin
   const [showSelector, setShowSelector] = useState(false)
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(currentMotmId || null)
   const [saving, setSaving] = useState(false)

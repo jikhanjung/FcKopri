@@ -7,16 +7,15 @@ import {
   UserGroupIcon, 
   CalendarIcon, 
   TrophyIcon,
-  LockClosedIcon,
   LockOpenIcon,
-  FireIcon,
-  ChartBarIcon,
   Bars3Icon,
   XMarkIcon,
   ChevronDownIcon,
   ArrowDownTrayIcon,
   PresentationChartBarIcon,
-  CogIcon
+  CogIcon,
+  UserIcon,
+  ShieldCheckIcon
 } from '@heroicons/react/24/outline'
 import { useAuth } from '@/contexts/AuthContext'
 import GlobalSearch from './GlobalSearch'
@@ -68,7 +67,7 @@ const navigation: NavigationItem[] = [
 
 export default function Navigation() {
   const pathname = usePathname()
-  const { isAdmin, logout } = useAuth()
+  const { user, signOut, isRoleAdmin, isSuperAdmin } = useAuth()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   return (
@@ -99,12 +98,13 @@ export default function Navigation() {
                       <Link
                         href={item.href}
                         className={linkClasses}
-                        data-testid={`nav-${item.name.toLowerCase()}-dropdown`}
+                        data-testid={`nav-${item.name.toLowerCase()}`}
                       >
                         <item.icon className="w-5 h-5 mr-2" />
                         {item.name}
-                        <ChevronDownIcon className="w-3 h-3 ml-1" />
+                        <ChevronDownIcon className="w-4 h-4 ml-1" />
                       </Link>
+                      
                       {/* 드롭다운 메뉴 */}
                       <div className="absolute left-0 top-full mt-1 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                         <div className="py-1">
@@ -114,7 +114,7 @@ export default function Navigation() {
                               href={subItem.href}
                               className={`${
                                 pathname === subItem.href
-                                  ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
+                                  ? 'bg-gray-100 dark:bg-gray-700 text-kopri-blue dark:text-kopri-lightblue'
                                   : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                               } block px-4 py-2 text-sm`}
                             >
@@ -142,59 +142,108 @@ export default function Navigation() {
             </div>
           </div>
           
-          {/* 검색 및 어드민 버튼 */}
+          {/* 검색 및 사용자 메뉴 */}
           <div className="flex items-center space-x-4">
             {/* 전역 검색 */}
             <div className="hidden md:block w-48">
               <GlobalSearch />
             </div>
-            
-            {/* 알림 */}
+
+            {/* 알림 벨 */}
             <NotificationBell />
             
             {/* 테마 토글 */}
             <ThemeToggle size="md" />
             
-            {/* 어드민 버튼 */}
-            <div className="hidden sm:flex items-center space-x-4">
-              {isAdmin ? (
-                <div className="flex items-center space-x-4">
-                  <Link
-                    href="/admin/competition"
-                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex items-center"
-                    title="대회 설정"
-                  >
-                    <CogIcon className="w-5 h-5" />
-                  </Link>
-                  <Link
-                    href="/admin/export"
-                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex items-center"
-                    title="데이터 내보내기"
-                  >
-                    <ArrowDownTrayIcon className="w-5 h-5" />
-                  </Link>
-                  <span className="text-sm text-gray-600 dark:text-gray-300 bg-green-100 dark:bg-green-800 px-2 py-1 rounded">
-                    관리자
-                  </span>
-                  <button
-                    onClick={logout}
-                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex items-center"
-                  >
-                    <LockOpenIcon className="w-5 h-5 mr-1" />
-                    <span className="hidden sm:inline">로그아웃</span>
-                  </button>
+            {/* 사용자 로그인 상태 */}
+            {user ? (
+              <div className="flex items-center space-x-3">
+                {/* 사용자 드롭다운 메뉴 */}
+                <div className="relative group">
+                  <div className="flex items-center space-x-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg px-2 py-1 transition-colors cursor-pointer">
+                    {user.user_metadata?.avatar_url ? (
+                      <img
+                        src={user.user_metadata.avatar_url}
+                        alt="프로필"
+                        className="w-8 h-8 rounded-full"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center">
+                        <UserIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                      </div>
+                    )}
+                    <span className="text-sm text-gray-700 dark:text-gray-300 hidden sm:block hover:text-kopri-blue dark:hover:text-kopri-lightblue">
+                      {user.user_metadata?.name || user.email?.split('@')[0]}
+                    </span>
+                    <ChevronDownIcon className="w-4 h-4 text-gray-400 hidden sm:block" />
+                  </div>
+                  
+                  {/* 드롭다운 메뉴 */}
+                  <div className="absolute right-0 top-full mt-1 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                    <div className="py-1">
+                      <Link
+                        href="/profile"
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
+                        <UserIcon className="w-4 h-4 mr-3" />
+                        내 프로필
+                      </Link>
+                      
+                      {(isRoleAdmin || isSuperAdmin) && (
+                        <>
+                          <div className="border-t border-gray-200 dark:border-gray-600 my-1"></div>
+                          <div className="px-4 py-2">
+                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                              관리자 메뉴
+                            </span>
+                          </div>
+                          <Link
+                            href="/admin/competition"
+                            className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          >
+                            <CogIcon className="w-4 h-4 mr-3" />
+                            대회 설정
+                          </Link>
+                          <Link
+                            href="/admin/export"
+                            className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          >
+                            <ArrowDownTrayIcon className="w-4 h-4 mr-3" />
+                            데이터 내보내기
+                          </Link>
+                          {isSuperAdmin && (
+                            <Link
+                              href="/admin/users"
+                              className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            >
+                              <ShieldCheckIcon className="w-4 h-4 mr-3" />
+                              사용자 권한 관리
+                            </Link>
+                          )}
+                        </>
+                      )}
+                      
+                      <div className="border-t border-gray-200 dark:border-gray-600 my-1"></div>
+                      <button
+                        onClick={signOut}
+                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-left"
+                      >
+                        <LockOpenIcon className="w-4 h-4 mr-3" />
+                        로그아웃
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              ) : (
-                <Link
-                  href="/admin/login"
-                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex items-center"
-                  data-testid="admin-login-button"
-                >
-                  <LockClosedIcon className="w-5 h-5 mr-1" />
-                  <span className="hidden sm:inline">관리자</span>
-                </Link>
-              )}
-            </div>
+              </div>
+            ) : (
+              <Link
+                href="/auth/login"
+                className="bg-kopri-blue text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-kopri-blue/80 transition-colors"
+                data-testid="user-login-button"
+              >
+                로그인
+              </Link>
+            )}
 
             {/* 모바일 메뉴 버튼 */}
             <div className="sm:hidden">
@@ -296,54 +345,48 @@ export default function Navigation() {
                 <ThemeToggle size="md" />
               </div>
             </div>
-            
-            {/* 모바일 어드민 버튼 */}
+
+            {/* 모바일 사용자 로그인 */}
             <div className="border-t border-gray-200 dark:border-gray-700 pt-2">
-              {isAdmin ? (
-                <div>
-                  <div className="flex items-center justify-between pl-3 pr-4 py-3">
-                    <span className="text-sm text-gray-600 dark:text-gray-300 bg-green-100 dark:bg-green-800 px-3 py-1 rounded">
-                      관리자 모드
-                    </span>
+              {user ? (
+                <div className="pl-3 pr-4 py-3">
+                  <Link
+                    href="/profile"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center space-x-3 w-full hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg p-2 transition-colors"
+                  >
+                    {user.user_metadata?.avatar_url && (
+                      <img
+                        src={user.user_metadata.avatar_url}
+                        alt="프로필"
+                        className="w-8 h-8 rounded-full"
+                      />
+                    )}
+                    <div className="flex-1">
+                      <div className="text-sm text-gray-700 dark:text-gray-300 font-medium">
+                        {user.user_metadata?.name || user.email?.split('@')[0]}
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                        프로필 보기
+                      </div>
+                    </div>
+                  </Link>
+                  <div className="mt-2 pl-2">
                     <button
-                      onClick={logout}
-                      className="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-full flex items-center"
+                      onClick={signOut}
+                      className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100 px-3 py-1 rounded hover:bg-gray-50 dark:hover:bg-gray-700"
                     >
-                      <LockOpenIcon className="w-5 h-5 mr-2" />
                       로그아웃
                     </button>
                   </div>
-                  <Link
-                    href="/admin/competition"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-gray-100 block pl-3 pr-4 py-3 border-l-4 border-transparent text-base font-medium"
-                  >
-                    <div className="flex items-center">
-                      <CogIcon className="w-6 h-6 mr-3" />
-                      대회 설정
-                    </div>
-                  </Link>
-                  <Link
-                    href="/admin/export"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-gray-100 block pl-3 pr-4 py-3 border-l-4 border-transparent text-base font-medium"
-                  >
-                    <div className="flex items-center">
-                      <ArrowDownTrayIcon className="w-6 h-6 mr-3" />
-                      데이터 내보내기
-                    </div>
-                  </Link>
                 </div>
               ) : (
                 <Link
-                  href="/admin/login"
+                  href="/auth/login"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-gray-100 block pl-3 pr-4 py-3 border-l-4 border-transparent text-base font-medium"
+                  className="block mx-3 my-2 bg-kopri-blue text-white text-center py-3 rounded-lg font-medium hover:bg-kopri-blue/80 transition-colors"
                 >
-                  <div className="flex items-center">
-                    <LockClosedIcon className="w-6 h-6 mr-3" />
-                    관리자 로그인
-                  </div>
+                  로그인
                 </Link>
               )}
             </div>

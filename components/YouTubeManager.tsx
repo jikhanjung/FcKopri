@@ -43,7 +43,8 @@ export default function YouTubeManager({
   currentYouTubeDuration,
   onYouTubeUpdate 
 }: YouTubeManagerProps) {
-  const { isAdmin } = useAuth()
+  const { isRoleAdmin, isSuperAdmin } = useAuth()
+  const isAdmin = isRoleAdmin || isSuperAdmin
   const [isEditing, setIsEditing] = useState(false)
   const [youtubeUrl, setYoutubeUrl] = useState(currentYouTubeUrl || '')
   const [loading, setLoading] = useState(false)

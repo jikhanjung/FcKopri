@@ -31,7 +31,8 @@ interface MatchPhotosProps {
 }
 
 export default function MatchPhotos({ matchId }: MatchPhotosProps) {
-  const { isAdmin } = useAuth()
+  const { isRoleAdmin, isSuperAdmin } = useAuth()
+  const isAdmin = isRoleAdmin || isSuperAdmin
   const [photos, setPhotos] = useState<MatchPhoto[]>([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
